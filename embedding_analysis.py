@@ -7,13 +7,13 @@ from PIL import Image
 
 
 df = pd.read_csv('./data/stage_2_train_labels.csv')
-df_unique = df.drop_duplicates(subset=['patientId'])[:]
+df_unique = df.drop_duplicates(subset=['patientId'])[:10]
 labels = df_unique['Target'].to_numpy()
 
 nb_bounding_box_per_patient = df['patientId'].value_counts()[df_unique['patientId']]
 nb_bounding_box_per_patient = [nb_bounding_box_per_patient[i] if labels[i]==1 else 0 for i in range(len(labels))]
 
-embeddings = np.load('./data/embeddings/RSNA_images_chexzero.npy')
+embeddings = np.load('./data/embeddings/RSNA_images_cxrclip.npy')
 print(embeddings.shape)
 pca = PCA(n_components=2)
 pca_embeddings = pca.fit_transform(embeddings)

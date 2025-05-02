@@ -32,6 +32,8 @@ get_all_embeddings: requirements
 	@echo GENERATING EMBEDDINGS WITH CHEXZERO
 	$(PYTHON_INTERPRETER) apply_model.py --model_name chexzero --batch_size 16
 
+	@echo GENERATING EMBEDDINGS WITH CXR-CLIP
+	$(PYTHON_INTERPRETER) apply_model.py --model_name cxrclip --batch_size 16
 
 get_embeddings:
 	$(PYTHON_INTERPRETER) apply_model.py --model_name $(model_name) --batch_size 16

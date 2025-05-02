@@ -3,6 +3,8 @@ from models.biomedclip.biomedclip import Biomedclip
 from models.biovil.biovil import Biovil
 from models.medimageinsight.medimageinsight import MedImageInsightWrapper
 from models.chexzero.chexzero import Chexzero
+from models.cxrclip.cxrclip_wrapper import Cxrclip
+
 # from models.gloria.gloria_wrapper import Gloria
 import argparse
 import pandas as pd
@@ -56,6 +58,8 @@ def main():
         model = MedImageInsightWrapper()
     elif args.model_name == 'chexzero':
         model = Chexzero()
+    elif args.model_name == 'cxrclip':
+        model = Cxrclip()
     # elif args.model_name == 'gloria':
     #     label_texts = {
     #         'Healthy':[
@@ -73,7 +77,7 @@ def main():
     #     }
     #     model = Gloria()
     else:
-        print('Unknown model name, choose in the following list: medclip,biomedclip,gloria,biovil,biovil-t,medimageinsight,chexzero')
+        print('Unknown model name, choose in the following list: medclip,biomedclip,gloria,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
         return
     
     
