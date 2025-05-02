@@ -4,3 +4,4 @@ data/embeddings
 
 **/__pycache__
 models/medimageinsight/2024.09.27
+**/pretrained
