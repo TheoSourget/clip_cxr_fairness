@@ -55,7 +55,7 @@ class CXRTestDataset(data.Dataset):
 
 
 class Chexzero():
-    def __init__(self,model_path="./pretrained/chexzero/weights.pt"):
+    def __init__(self,model_path="./pretrained/chexzero/clip_weights.pt"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self.load_clip(model_path=model_path,pretrained=True)
         self.transform = Compose([
@@ -88,7 +88,7 @@ class Chexzero():
 
             model = CLIP(**params)
         else: 
-            model, preprocess = clip.load("./pretrained/ViT-B/32", device=self.device, jit=False) 
+            model, preprocess = clip.load("./pretrained/chexzero/ViT-B-32.pt", device=self.device, jit=False) 
         try: 
             model.load_state_dict(torch.load(model_path, map_location=self.device))
         except: 

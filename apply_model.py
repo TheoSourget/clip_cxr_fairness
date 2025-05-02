@@ -49,7 +49,9 @@ def main():
     elif args.model_name == 'biomedclip':
         model = Biomedclip()
     elif args.model_name == 'biovil':
-        model = Biovil()
+        model = Biovil(image_model="biovil")
+    elif args.model_name == 'biovil-t':
+        model = Biovil(image_model="biovil-t")
     elif args.model_name == 'medimageinsight':
         model = MedImageInsightWrapper()
     elif args.model_name == 'chexzero':
@@ -71,7 +73,7 @@ def main():
     #     }
     #     model = Gloria()
     else:
-        print('Unknown model name, choose in the following list: medclip,biomedclip,gloria,biovil,medimageinsight,chexzero')
+        print('Unknown model name, choose in the following list: medclip,biomedclip,gloria,biovil,biovil-t,medimageinsight,chexzero')
         return
     
     

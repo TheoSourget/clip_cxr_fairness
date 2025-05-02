@@ -84,17 +84,27 @@ CENTER_CROP_SIZE = 512
 # test_zero_shot_RNSA()
 
 class Biovil():
-    def __init__(self):
+    def __init__(self,image_model="biovil"):
+        self.image_model = image_model
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._get_vlp_inference_engine()
         self.model.image_inference_engine.to(self.device)
         self.model.text_inference_engine.to(self.device)
         
     def _get_vlp_inference_engine(self) -> ImageTextInferenceEngine:
-        image_inference = ImageInferenceEngine(
-            image_model=get_biovil_image_encoder(),
-            transform=create_chest_xray_transform_for_inference(resize=RESIZE, center_crop_size=CENTER_CROP_SIZE),
-        )
+        if self.image_model == "biovil":
+            image_inference = ImageInferenceEngine(
+                image_model=get_biovil_image_encoder(),
+                transform=create_chest_xray_transform_for_inference(resize=RESIZE, center_crop_size=CENTER_CROP_SIZE),
+            )
+        elif self.image_model == "biovil-t":
+            image_inference = ImageInferenceEngine(
+                image_model=get_biovil_t_image_encoder(),
+                transform=create_chest_xray_transform_for_inference(resize=RESIZE, center_crop_size=CENTER_CROP_SIZE),
+            )
+        else:
+            raise Exception(f"Image model name is unknown, must be biovil or biovil-t, got {self.image_model}")
+        
         img_txt_inference = ImageTextInferenceEngine(
             image_inference_engine=image_inference,
             text_inference_engine=get_bert_inference(BertEncoderType.BIOVIL_T_BERT),
@@ -106,10 +116,11 @@ class Biovil():
         for image_path in image_paths:
             images.append(self.model.image_inference_engine.load_and_transform_input_image(Path(image_path),self.model.image_inference_engine.transform)[0][0]) 
         images = torch.stack(images,dim=0).to(self.device)
-
         projected_img_embs = self.model.image_inference_engine.model.forward(images).projected_global_embedding
         for i,emb in enumerate(projected_img_embs):
-            projected_img_embs[i] = F.normalize(torch.tensor([emb.tolist()]), dim=-1)
+            tmp_tensor = emb.tolist()
+            tmp_tensor = torch.tensor([tmp_tensor])
+            projected_img_embs[i] = F.normalize(tmp_tensor, dim=-1)
         return projected_img_embs
 
     def get_embeddings(self,image_paths,labels):
