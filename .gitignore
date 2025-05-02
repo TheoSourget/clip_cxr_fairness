@@ -1,4 +1,6 @@
 data/RSNA
 data/RSNA_png
+data
+
 **/__pycache__
 models/medimageinsight/2024.09.27
