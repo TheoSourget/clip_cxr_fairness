@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import tqdm
 import torch
+np.random.seed(1907)
 
 def save_embeddings(image_paths,label_texts,model,batch_size,save_file):
     embeddings = {
@@ -18,15 +19,59 @@ def save_embeddings(image_paths,label_texts,model,batch_size,save_file):
         'text_embeds':[]
     }
     for i in tqdm.tqdm(range(len(image_paths)//batch_size),total=len(image_paths)//batch_size):
-        batch_embedding = model.get_embeddings(image_paths[i*batch_size:(i+1)*batch_size],label_texts)
-        embeddings['img_embeds'] += batch_embedding['img_embeds']
-        if i == 0:
-            embeddings['text_embeds'] = batch_embedding['text_embeds']
-    if len(image_paths)%batch_size != 0:
-        embeddings['img_embeds'] += model.get_embeddings(image_paths[len(image_paths)-(len(image_paths)%batch_size):],label_texts)['img_embeds']
+        imgs_batch = image_paths[i*batch_size:(i+1)*batch_size]
+        
+        #Check whether text in lagel_texts are actual labels (then size of label_texts is different than the number of images) or reports (1 report per image)
+        if len(label_texts) != len(image_paths):
+            #Actual labels: same text for every batch
+            texts_batch = label_texts
+        else:
+            #Reports: the texts are also batched
+            texts_batch = label_texts[i*batch_size:(i+1)*batch_size]
 
-    np.save(save_file,embeddings['img_embeds'])
+        batch_embedding = model.get_embeddings(imgs_batch,texts_batch)
+        embeddings['img_embeds'] += batch_embedding['img_embeds']
+        
+        if len(label_texts) != len(image_paths):
+            embeddings['text_embeds'] = batch_embedding['text_embeds']
+        else:
+            embeddings['text_embeds'] += batch_embedding['text_embeds']
+
+    
+    if (len(image_paths)%batch_size != 0) and (len(image_paths)>batch_size):
+        imgs_batch = image_paths[len(image_paths)-(len(image_paths)%batch_size):]
+        if len(label_texts) != len(image_paths):
+            texts_batch = label_texts
+        else:
+            texts_batch = label_texts[len(image_paths)-(len(image_paths)%batch_size):]
+        batch_embedding = model.get_embeddings(imgs_batch,texts_batch)
+
+        embeddings['img_embeds'] += batch_embedding['img_embeds']
+        if len(label_texts) != len(image_paths):
+            embeddings['text_embeds'] = batch_embedding['text_embeds']
+        else:
+            embeddings['text_embeds'] += batch_embedding['text_embeds']
+
+    np.save(f"{save_file}_images",embeddings['img_embeds'])
+    np.save(f"{save_file}_texts",embeddings['text_embeds'])
+
     return
+
+
+def extract_text(report):
+    if "FINDINGS:" in report:
+        sentences = report.split("FINDINGS:")[-1].split(".")
+    elif "IMPRESSION:" in report:
+        sentences = report.split("IMPRESSION:")[-1].split(".")
+    else:
+        sentences = report.split(".")
+    
+    if len(sentences) == 1:
+        return sentences[0]
+     
+    
+    random_sentence_idx = np.random.randint(max(1,len(sentences)-3))
+    return ".".join(sentences[random_sentence_idx:random_sentence_idx+3])
 
 def main():
     parser = argparse.ArgumentParser()
@@ -36,55 +81,47 @@ def main():
 
     args, unknown = parser.parse_known_args()
 
-    df = pd.read_csv('./data/stage_2_train_labels.csv')
-    df_unique = df.drop_duplicates(subset=['patientId'])
+    #FOR RSNA
+    # df = pd.read_csv('./data/stage_2_train_labels.csv')
+    # df_unique = df.drop_duplicates(subset=['patientId'])
 
-    df_unique['path'] = df_unique['patientId'].apply(lambda id:f'{args.image_folder}{id}.png')
-    image_paths = df_unique['path'].to_numpy()[:10]
-    label_texts = [
-        'Healthy',
-        'Pneumonia',
-    ]
+    # df_unique['path'] = df_unique['patientId'].apply(lambda id:f'{args.image_folder}{id}.png')
+    # image_paths = df_unique['path'].to_numpy()[:]
 
-    if args.model_name == 'medclip':
-        model = MedCLIP()
-    elif args.model_name == 'biomedclip':
-        model = Biomedclip()
-    elif args.model_name == 'biovil':
-        model = Biovil(image_model="biovil")
-    elif args.model_name == 'biovil-t':
-        model = Biovil(image_model="biovil-t")
-    elif args.model_name == 'medimageinsight':
-        model = MedImageInsightWrapper()
-    elif args.model_name == 'chexzero':
-        model = Chexzero()
-    elif args.model_name == 'cxrclip':
-        model = Cxrclip()
-    # elif args.model_name == 'gloria':
-    #     label_texts = {
-    #         'Healthy':[
-    #             'There is no pneumonia',
-    #             'No evidence of pneumonia',
-    #             'No evidence of acute pneumonia',
-    #             'No signs of pneumonia',
-    #         ],
-    #         'Pneumonia':[
-    #             'Findings consistent with pneumonia',
-    #             'Findings suggesting pneumonia',
-    #             'This opacity can represent pneumonia',
-    #             'Findings are most compatible with pneumonia',         
-    #         ]
-    #     }
-    #     model = Gloria()
-    else:
-        print('Unknown model name, choose in the following list: medclip,biomedclip,gloria,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
-        return
-    
-    
-    # result = model.get_predictions(image_paths,label_texts)
-    # result = model.get_embeddings(image_paths,label_texts)
-    save_embeddings(image_paths,label_texts,model,args.batch_size,f'./data/embeddings/RSNA_images_{args.model_name}')
-    # print(result['img_embeds'],len(result['text_embeds']))
+    #FOR MIMIC
+    mimic_path = './data/'
+    df = pd.read_csv(f'{mimic_path}test_preproc.csv')
+    df['path_preproc'] = df['path_preproc'].apply(lambda img_path:f'{mimic_path}{img_path}')
+    image_paths = df['path_preproc'].to_numpy()[:]
+    label_texts = df['report'].apply(extract_text).to_list()[:]
+    df['processed_reports'] = label_texts
+    df.to_csv(f'{mimic_path}preproc_reports_mimic.csv')
+    return 
+    # label_texts = [
+    #     'Healthy',
+    #     'Abnormal',
+    # ]
+    with torch.no_grad():
+        if args.model_name == 'medclip':
+            model = MedCLIP()
+        elif args.model_name == 'biovil':
+            model = Biovil(image_model="biovil")
+        elif args.model_name == 'biovil-t':
+            model = Biovil(image_model="biovil-t")
+        elif args.model_name == 'medimageinsight':
+            model = MedImageInsightWrapper()
+        elif args.model_name == 'chexzero':
+            model = Chexzero()
+        elif args.model_name == 'cxrclip':
+            model = Cxrclip()
+        else:
+            print('Unknown model name, choose in the following list: medclip,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
+            return
+   
+        # result = model.get_predictions(image_paths,label_texts)
+        # result = model.get_embeddings(image_paths,label_texts)
+        save_embeddings(image_paths,label_texts,model,args.batch_size,f'./data/embeddings/MIMIC_{args.model_name}')
+        # print(result['img_embeds'],len(result['text_embeds']))
 
     
 if __name__ == "__main__":
