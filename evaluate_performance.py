@@ -41,49 +41,51 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', default='medclip')
     parser.add_argument('--image_folder', default='./data/RSNA_png/')
+    parser.add_argument('--compute_probas', type=bool, default=False)
     parser.add_argument('--batch_size', default=1, type=int)
 
     args, unknown = parser.parse_known_args()
     
-    attributes = ["sex","race","age_group"]
     #FOR MIMIC
     mimic_path = './data/'
     df = pd.read_csv(f'{mimic_path}test_preproc_filtered.csv')
     df = df.dropna(subset=["findings"])
     df['path_preproc'] = df['path_preproc'].apply(lambda img_path:f'{mimic_path}{img_path}')
     image_paths = df['path_preproc'].to_numpy()[:]
+    labels = [
+        'Atelectasis',
+        'Cardiomegaly',
+        'Consolidation',
+        'Pleural Effusion',
+        'Pneumonia',
+        'Pneumothorax',
+    ]
+    attributes = ["sex","race","age_group"]
 
     with torch.no_grad():
-        if args.model_name == 'medclip':
-            model = MedCLIP()
-        elif args.model_name == 'biovil':
-            model = Biovil(image_model="biovil")
-        elif args.model_name == 'biovil-t':
-            model = Biovil(image_model="biovil-t")
-        elif args.model_name == 'medimageinsight':
-            model = MedImageInsightWrapper()
-        elif args.model_name == 'chexzero':
-            model = Chexzero()
-        elif args.model_name == 'cxrclip':
-            model = Cxrclip()
-        else:
-            print('Unknown model name, choose in the following list: medclip,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
-            return
-   
-        print("Computing predictions")
-        labels = [
-            'Atelectasis',
-            'Cardiomegaly',
-            'Consolidation',
-            'Pleural Effusion',
-            'Pneumonia',
-            'Pneumothorax',
-        ]
-        
-        lst_probas = compute_probas(image_paths,labels,model,args.batch_size)
-        for label in labels:
-            df[f"proba_{label}"] = lst_probas[f"{label}"]
-        df.to_csv(f"./data/probas_MIMIC_{args.model_name}.csv")
+        if args.compute_probas:
+            if args.model_name == 'medclip':
+                model = MedCLIP()
+            elif args.model_name == 'biovil':
+                model = Biovil(image_model="biovil")
+            elif args.model_name == 'biovil-t':
+                model = Biovil(image_model="biovil-t")
+            elif args.model_name == 'medimageinsight':
+                model = MedImageInsightWrapper()
+            elif args.model_name == 'chexzero':
+                model = Chexzero()
+            elif args.model_name == 'cxrclip':
+                model = Cxrclip()
+            else:
+                print('Unknown model name, choose in the following list: medclip,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
+                return
+       
+            print("Computing predictions")
+            
+            lst_probas = compute_probas(image_paths,labels,model,args.batch_size)
+            for label in labels:
+                df[f"proba_{label}"] = lst_probas[f"{label}"]
+            df.to_csv(f"./data/probas_MIMIC_{args.model_name}.csv")
         df = pd.read_csv(f"./data/probas_MIMIC_{args.model_name}.csv")
         df["age"] = df["age"].astype(int)
         df["age_group"] = pd.cut(df["age"],bins=[18,25,50,65,80,np.inf],labels=["18-25","25-50","50-65","65-80","80+"],right=False)
