@@ -81,14 +81,16 @@ def main():
                 return
        
             print("Computing predictions")
-            
             lst_probas = compute_probas(image_paths,labels,model,args.batch_size)
             for label in labels:
                 df[f"proba_{label}"] = lst_probas[f"{label}"]
             df.to_csv(f"./data/probas_MIMIC_{args.model_name}.csv")
+        
+        
         df = pd.read_csv(f"./data/probas_MIMIC_{args.model_name}.csv")
         df["age"] = df["age"].astype(int)
         df["age_group"] = pd.cut(df["age"],bins=[18,25,50,65,80,np.inf],labels=["18-25","25-50","50-65","65-80","80+"],right=False)
+        df = df.sort_values(by=["age"])
         with open(f"./data/performance/zeroshot_{args.model_name}.csv","w") as perf_file:
             perf_file.write("class,group,AUC,AUPRC")
             for label in labels:
