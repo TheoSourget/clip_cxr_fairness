@@ -66,9 +66,10 @@ class MedCLIP():
             padding=True
             )
         outputs = self.model(**inputs)
-
+        logits = outputs['logits']
+        softmax = logits.softmax(dim=1)
         #Return the emddings
-        return outputs['logits'].tolist()
+        return softmax.tolist()
     
     def get_embeddings_and_predictions(self,image_paths,labels):
         #Load the images

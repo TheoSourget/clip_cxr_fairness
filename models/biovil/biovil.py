@@ -97,18 +97,23 @@ class Biovil():
                 image_model=get_biovil_image_encoder(),
                 transform=create_chest_xray_transform_for_inference(resize=RESIZE, center_crop_size=CENTER_CROP_SIZE),
             )
+            img_txt_inference = ImageTextInferenceEngine(
+                image_inference_engine=image_inference,
+                text_inference_engine=get_bert_inference(BertEncoderType.CXR_BERT),
+            )
         elif self.image_model == "biovil-t":
             image_inference = ImageInferenceEngine(
                 image_model=get_biovil_t_image_encoder(),
                 transform=create_chest_xray_transform_for_inference(resize=RESIZE, center_crop_size=CENTER_CROP_SIZE),
             )
+            img_txt_inference = ImageTextInferenceEngine(
+                image_inference_engine=image_inference,
+                text_inference_engine=get_bert_inference(BertEncoderType.BIOVIL_T_BERT),
+            )
         else:
             raise Exception(f"Image model name is unknown, must be biovil or biovil-t, got {self.image_model}")
         
-        img_txt_inference = ImageTextInferenceEngine(
-            image_inference_engine=image_inference,
-            text_inference_engine=get_bert_inference(BertEncoderType.BIOVIL_T_BERT),
-        )
+        
         return img_txt_inference
     
     def process_batch_images(self,image_paths):
@@ -125,12 +130,12 @@ class Biovil():
 
     def get_embeddings(self,image_paths,labels):
 
-        text_embeddings =   self.model.text_inference_engine.get_embeddings_from_prompt(labels, normalize=False).tolist()
         # image_embeddings = []
         # for p in image_paths:
         #     image_embedding = self.model.image_inference_engine.get_projected_global_embedding(Path(p))        
         #     image_embeddings.append(image_embedding.tolist())
         image_embeddings = self.process_batch_images(image_paths).tolist()
+        text_embeddings =   self.model.text_inference_engine.get_embeddings_from_prompt(labels, normalize=False).tolist()
 
         embeddings = {
             'img_embeds':image_embeddings,
@@ -139,17 +144,23 @@ class Biovil():
         #Return the emddings
         return embeddings
 
-    def get_predictions(self,image_paths,labels):   
-        softmaxs = []
-        for p in image_paths:
-            logits_image = []
-            for l in labels:
-                image_path = Path(p)
-                score = self.model.get_similarity_score_from_raw_data(image_path=image_path, query_text=l)
-                logits_image.append(score)
-            softmaxs.append(softmax(torch.tensor(logits_image)).tolist())
+    def get_predictions(self,image_paths,labels):
+        text_embeddings =   self.model.text_inference_engine.get_embeddings_from_prompt(labels, normalize=False)
+        image_embeddings = self.process_batch_images(image_paths)  
+        cos_similarity = image_embeddings @ text_embeddings.t()
+        print(cos_similarity)
+        softmaxs = cos_similarity.softmax(dim=1)
+        print(softmaxs)
+        # softmaxs = []
+        # for p in image_paths:
+        #     logits_image = []
+        #     for l in labels:
+        #         image_path = Path(p)
+        #         score = self.model.get_similarity_score_from_raw_data(image_path=image_path, query_text=l)
+        #         logits_image.append(score)
+        #     softmaxs.append(softmax(torch.tensor(logits_image)).tolist())
 
-        return softmaxs
+        return softmaxs.tolist()
     
     def get_embeddings_and_predictions(self,image_paths,labels):
         embeddings = self.get_embeddings(image_paths,labels)
