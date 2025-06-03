@@ -28,6 +28,8 @@ projection_type = args.projection_type
 
 df = pd.read_csv(f'./data/test_preproc_filtered.csv')
 df = df.dropna(subset=["findings"])
+df["age"] = df["age"].astype(int)
+df["age_label"] = pd.cut(df["age"],bins=[18,25,50,65,80,np.inf],labels=["18-25","25-50","50-65","65-80","80+"],right=False)
 
 embeddings_images = np.load(f'./data/embeddings/MIMIC/MIMIC_{model_name}_images.npy')
 embeddings_texts = np.load(f'./data/embeddings/MIMIC/MIMIC_{model_name}_texts.npy')
@@ -52,21 +54,31 @@ fig.ax_joint.legend(loc='upper right')
 plt.xlabel(f"{projection_type} 1")
 plt.ylabel(f"{projection_type} 2")
 plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_modality.png", bbox_inches='tight', dpi=300)
+plt.close()
 
+Path(f"./reports/figures/diff_embeddings/{model_name}").mkdir(parents=True, exist_ok=True)
+centroid_img = embeddings_images.mean(axis=0)
+centroid_txt = embeddings_texts.mean(axis=0)
+diff = np.abs(centroid_img - centroid_txt)
+diff_ordered = diff[np.argsort(diff)[::-1]]
+plt.figure()
+plt.plot(range(len(diff)),diff_ordered)
+plt.savefig(f"./reports/figures/diff_embeddings/{model_name}/diff_{model_name}_modalities.png")
+plt.close()
 
 
 characteristics = {
     "sex":df["sex"].unique(),
     "race":df["race"].unique(),
     "disease":df["disease"].unique(),
-    "ViewPosition":df["ViewPosition"].unique()
+    "ViewPosition":df["ViewPosition"].unique(),
+    "age_label":df["age_label"].unique()
 }
 
 for charac in characteristics:
+    Path(f"./reports/figures/diff_embeddings/{model_name}/{charac}").mkdir(parents=True, exist_ok=True)
 
     lst_charac = df[charac].tolist()
-    # if charac == "disease":
-    #     lst_charac = ["Normal" if c == "No Finding" else "Abnormal" for c in lst_charac]
 
     #Both image and text embeddings
     sns.set_theme(style="white", palette=None)
@@ -75,6 +87,7 @@ for charac in characteristics:
     plt.xlabel(f"{projection_type} 1")
     plt.ylabel(f"{projection_type} 2")
     plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_{charac.lower()}_imagestexts.png", bbox_inches='tight', dpi=300)
+    plt.close()
 
 
     #Only image embeddings
@@ -84,6 +97,7 @@ for charac in characteristics:
     plt.xlabel(f"{projection_type} 1")
     plt.ylabel(f"{projection_type} 2")
     plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_{charac.lower()}_images.png", bbox_inches='tight', dpi=300)
+    plt.close()
 
 
     #Only text embeddings
@@ -92,4 +106,23 @@ for charac in characteristics:
     fig.ax_joint.legend(loc='upper right')
     plt.xlabel(f"{projection_type} 1")
     plt.ylabel(f"{projection_type} 2")
-    plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_{charac.lower()}_texts.png", bbox_inches='tight', dpi=300) 
+    plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_{charac.lower()}_texts.png", bbox_inches='tight', dpi=300)
+    plt.close()
+    
+    centroid_groups = []
+    for group in characteristics[charac]:
+        current_group_embeddings = embeddings_images[np.where(np.array(lst_charac)==group)]
+        centroid_groups.append(current_group_embeddings.mean(axis=0))
+
+    for i in range(len(centroid_groups)-1):
+        emb1 = centroid_groups[i]
+        for j in range(i+1,len(centroid_groups)):
+            emb2 = centroid_groups[j]
+            if i != j:
+                diff = np.abs(emb1 - emb2)
+                diff_ordered = diff[np.argsort(diff)[::-1]]
+                plt.figure()
+                plt.plot(range(len(diff)),diff_ordered)
+                plt.savefig(f"./reports/figures/diff_embeddings/{model_name}/{charac}/diff_{model_name}_{charac}_{characteristics[charac][i]}_{characteristics[charac][j]}.png")
+                plt.close()
+        

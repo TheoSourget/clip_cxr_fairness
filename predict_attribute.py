@@ -46,7 +46,7 @@ else:
 #A single train test split
 train_test_split = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=1907)
 
-#A single train/val split to measure variability
+#A single train/val split
 train_valid_split = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=1907)
 
 
