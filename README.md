@@ -1,12 +1,12 @@
-# clip_cxr_wrapper
-This repository wrap multiple CLIP-based VLM models in a uniform way to obtain embeddings or predictions. This code doesn't contain any training or fine-tuning script as it only apply pretrained VLMs. 
+# Fairness and Robustness of CLIP-Based Models for Chest X-rays
+This is the official repository of the paper ["Fairness and Robustness of CLIP-Based Models for Chest X-rays"](github.com/TheoSourget/clip_cxr_fairness) (under review). This repo contain the code to evaluate six CLIP-based architectures for the classification of chest X-rays.
 
 # How to install
 Clone the repo, create your environment and install the dependencies using the following commands (you may need to change your pytorch version to fit your system):
 
 ```sh
 #Clone the repo
-git clone https://github.com/TheoSourget/clip_cxr_wrapper.git
+git clone https://github.com/TheoSourget/clip_cxr_fairness.git
 
 #Create a new python env
 conda create --name vlm python=3.10
@@ -17,19 +17,34 @@ pip install -r requirements.txt
 ``` 
 
 ## Models:
-For some model, you'll need to download some pretrained weights:
-TBA
+You will need to download pretrained weights before using some models
+### CXR-CLIP
+Download the model weight from their [original repo](https://github.com/Soombit-ai/cxr-clip?tab=readme-ov-file#pre-trained-model-checkpoint) (we used the ResNet50 M,M,C14) and place it in the pretrained/cxrclip folder
+
+### CheXzero
+1. Download the weights from [this link](https://drive.google.com/drive/folders/1makFLiEMbSleYltaRxw81aBhEDMpVwno) rename and place the file at pretrained/chexzero/clip_weights.pt 
+2. Download the weights from [this link](https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt) and place the file in pretrained/chexzero/ViT-B-32.pt
 
 ## Data:
 
-This code was applied to the RSNA pneumonia dataset, please download the dataset from its official challenge on [Kaggle](https://www.kaggle.com/c/rsna-pneumonia-detection-challenge/data).
-Download the stage_2_train_labels.csv and the stage_2_train_images folder. Put them in the data folder.
+### MIMIC-CXR
+TBA
 
-Convert the dicom files to png:
+### NIH-CXR14
+Download the dataset from [this link](https://www.kaggle.com/datasets/nih-chest-xrays/data)
+In the data folder place all the images from the orginal subfolders into a single data/CXR14/imgs folder
+Place Data_Entry_2017.csv in the data/CXR14 folder
 
-``` sh
-python dicom_to_png.py
-``` 
+### NEATX
+Download NIH-CX14_TubeAnnotations_NonExperts_aggregated.csv from [this link](https://zenodo.org/records/14944064) and place it into the data/CXR14 folder
+
+### Process the datasets
+You can process all the data generating the original datasets with the command:
+```sh
+python process_datasets.py
+```
+
+To generate the drains label launch drains_detection.py script after processing the data with the previous command.
 
 # How to use
 
@@ -44,11 +59,20 @@ the options are:
 * **--batch_size**: The number of image to process at the same time. For some model the image will still be processed one by one
 * **--image_folder**: Path to the folder containing the png images, if you followed the instruction the default value should be working.
 
+## Get the probabilities
+TBA
+
+## Generate the tables and visualisations
+TBA
+
 # Acknowledgement
-This repo contains code from the other repositories, we want to thank the authors of these repos:
-* [Biomedclip](https://huggingface.co/microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224)
-* [Medclip](https://github.com/RyanWangZf/MedCLIP)
-* [Medimageinsight](https://huggingface.co/lion-ai/MedImageInsights)
-* [Biovil](https://github.com/microsoft/hi-ml/tree/e011bb996056f81e6cca98eae5b0f1223461dda1/hi-ml-multimodal)
+This repo contains code from the base repo of the models, we want to thank the authors of these repos:
+* [MedCLIP](https://github.com/RyanWangZf/MedCLIP)
+* [MedImageInsight](https://huggingface.co/lion-ai/MedImageInsights)
+* [Biovil and Biovil-t](https://github.com/microsoft/hi-ml/tree/e011bb996056f81e6cca98eae5b0f1223461dda1/hi-ml-multimodal)
+* [CheXzero](https://github.com/rajpurkarlab/CheXzero)
+* [CXR CLIP](https://github.com/Soombit-ai/cxr-clip)
+
+
 
 **If you're using any of the model and/or dataset for research, please remember to cite the corresponding original papers following their authors guidelines.**
