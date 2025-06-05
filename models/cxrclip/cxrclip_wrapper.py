@@ -61,7 +61,24 @@ class Cxrclip():
         return embeddings
 
     def get_predictions(self,image_paths,labels):
-        pass
-
+        embeddings = self.get_embeddings(image_paths,labels)
+        image_embed = torch.Tensor(embeddings["img_embeds"])
+        label_embed = torch.Tensor(embeddings["text_embeds"])
+        logits = image_embed @ label_embed.T
+        softmaxs = logits.softmax(dim=1)
+        return softmaxs.tolist()
+    
     def get_embeddings_predictions(self,image_paths,labels):
-        pass
+        embeddings = self.get_embeddings(image_paths,labels)
+        image_embed = torch.Tensor(embeddings["img_embeds"])
+        label_embed = torch.Tensor(embeddings["text_embeds"])
+        logits = image_embed @ label_embed.T
+        softmaxs = logits.softmax(dim=1)
+
+        results = {
+            'img_embeds':embeddings['img_embeds'],
+            'text_embeds':embeddings['text_embeds'],
+            'softmaxs':softmaxs
+        }
+
+        return results
