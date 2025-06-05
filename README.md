@@ -43,15 +43,17 @@ You can process all the data generating the original datasets with the command:
 ```sh
 python process_datasets.py
 ```
+The images will be resized to 224x224 and normalized.
+
 
 To generate the drains label launch drains_detection.py script after processing the data with the previous command.
 
 # How to use
 
 ## Get the embeddings
-The script apply_model.py gives examples on how to apply the models. Here is an example of command to use the script:
+The script generate_embeddings.py can be used to generate the embeddings. An example using the following command:
 ```sh
-python apply_model.py --model_name medimageinsight --batch_size 5
+python generate_embeddings.py --model_name medimageinsight --batch_size 5
 ``` 
 
 the options are:
@@ -60,10 +62,24 @@ the options are:
 * **--image_folder**: Path to the folder containing the png images, if you followed the instruction the default value should be working.
 
 ## Get the probabilities
-TBA
+The script evaluate_performance.py compute the probabality for the labels defined within the file and saved them in data/probas_dataset/. It will also compute the AUC and AUCPR and save the results in data/performance/dataset/.
+Here is an example to launch the script:
+
+```sh
+python evaluate_performance.py --model_name medimageinsight --batch_size 32
+```
+The options are:
+the options are:
+* **--model_name**: name of the model to apply. Choose between:
+* **--batch_size**: The number of image to process at the same time. For some model the image will still be processed one by one
+* **--dataset**: Name of the dataset you want to use, MIMIC or CXR14.
+
 
 ## Generate the tables and visualisations
-TBA
+To reproduce most of the tables and figures from the paper you can launch generate_figures_tables.py:
+```sh
+python generate_figures_tables.py
+```
 
 # Acknowledgement
 This repo contains code from the base repo of the models, we want to thank the authors of these repos:
