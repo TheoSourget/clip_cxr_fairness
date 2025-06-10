@@ -36,6 +36,23 @@ def compute_probas(image_paths,label_texts,model,batch_size):
 
     return lst_probas
 
+def bootstrap(labels,probas,metric,nb_selection=1000):
+    #Taken from https://machinelearningmastery.com/confidence-intervals-for-machine-learning/
+    scores = []
+    for _ in range(nb_selection):
+        indices = np.random.randint(0, len(labels), len(labels))
+        labels_selection = labels[indices]
+        probas_selection = probas[indices]
+        score = metric(labels_selection,probas_selection)
+        scores.append(score)
+
+    alpha = 5.0
+    lower_p = alpha / 2.0
+    lower = max(0.0, np.percentile(scores, lower_p))
+    upper_p = (100 - alpha) + (alpha / 2.0)
+    upper = min(1.0, np.percentile(scores, upper_p))
+    return lower, upper
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', default='medclip')
@@ -54,13 +71,7 @@ def main():
             'Atelectasis',
             'Cardiomegaly',
             'Consolidation',
-            'Edema',
-            'Enlarged Cardiomediastinum',
-            'Fracture',
-            'Lung Lesion',
-            'Lung Opacity',
             'Pleural Effusion',
-            'Pleural Other',
             'Pneumonia',
             'Pneumothorax',
         ]
@@ -78,29 +89,29 @@ def main():
 
     image_paths = df['path_preproc'].to_numpy()[:]
     with torch.no_grad():
-        if args.model_name == 'medclip':
-            model = MedCLIP()
-        elif args.model_name == 'biovil':
-            model = Biovil(image_model="biovil")
-        elif args.model_name == 'biovil-t':
-            model = Biovil(image_model="biovil-t")
-        elif args.model_name == 'medimageinsight':
-            model = MedImageInsightWrapper()
-        elif args.model_name == 'chexzero':
-            model = Chexzero()
-        elif args.model_name == 'cxrclip':
-            model = Cxrclip()
-        else:
-            print('Unknown model name, choose in the following list: medclip,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
-            return
+        # if args.model_name == 'medclip':
+        #     model = MedCLIP()
+        # elif args.model_name == 'biovil':
+        #     model = Biovil(image_model="biovil")
+        # elif args.model_name == 'biovil-t':
+        #     model = Biovil(image_model="biovil-t")
+        # elif args.model_name == 'medimageinsight':
+        #     model = MedImageInsightWrapper()
+        # elif args.model_name == 'chexzero':
+        #     model = Chexzero()
+        # elif args.model_name == 'cxrclip':
+        #     model = Cxrclip()
+        # else:
+        #     print('Unknown model name, choose in the following list: medclip,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
+        #     return
    
-        print("Computing predictions")
-        lst_probas = compute_probas(image_paths,labels,model,args.batch_size)
-        for label in labels:
-            df[f"proba_{label}"] = lst_probas[f"{label}"]
+        # print("Computing predictions")
+        # lst_probas = compute_probas(image_paths,labels,model,args.batch_size)
+        # for label in labels:
+        #     df[f"proba_{label}"] = lst_probas[f"{label}"]
         
-        Path(f"./data/probas_{args.dataset}/").mkdir(parents=True, exist_ok=True)
-        df.to_csv(f"./data/probas_{args.dataset}/probas_{args.dataset}_{args.model_name}.csv")
+        # Path(f"./data/probas_{args.dataset}/").mkdir(parents=True, exist_ok=True)
+        # df.to_csv(f"./data/probas_{args.dataset}/probas_{args.dataset}_{args.model_name}.csv")
 
         df = pd.read_csv(f"./data/probas_{args.dataset}/probas_{args.dataset}_{args.model_name}.csv")
         # df["age"] = df["age"].astype(int)
@@ -109,23 +120,28 @@ def main():
         
         Path(f"./data/performance/{args.dataset}/").mkdir(parents=True, exist_ok=True)
         with open(f"./data/performance/{args.dataset}/zeroshot_{args.model_name}.csv","w") as perf_file:
-            perf_file.write("class,group,AUC,AUPRC")
+            perf_file.write("class,group,AUC,CI_AUC_low,CI_AUC_up,AUPRC,CI_AUPRC_low,CI_AUPRC_up")
             for label in labels:
-                y_true = df[label].fillna(0)
-                y_proba = df[f"proba_{label}"]
+                y_true = df[label].fillna(0).to_numpy()
+                y_proba = df[f"proba_{label}"].to_numpy()
                 auc = roc_auc_score(y_true,y_proba)
                 auprc = average_precision_score(y_true,y_proba)
-                perf_file.write(f"\n{label},global,{round(auc,2)},{round(auprc,2)}")
+                ci_auc = bootstrap(y_true,y_proba,roc_auc_score)
+                ci_auprc = bootstrap(y_true,y_proba,average_precision_score)
+                perf_file.write(f"\n{label},global,{round(auc,2)},{round(ci_auc[0],2)},{round(ci_auc[1],2)},{round(auprc,2)},{round(ci_auprc[0],2)},{round(ci_auprc[1],2)}")
                 # df[["dicom_id",label,f"proba_{label}"]].fillna(0).sort_values(by=[f"proba_{label}"]).to_csv(f"./data/ordered_proba__{args.model_name}_{label}.csv")
                 for attribute in attributes:
                     attribute_values = df[attribute].unique()
                     for subgroup in attribute_values:
                         df_subgroup = df[df[attribute]==subgroup]
-                        y_true = df_subgroup[label].fillna(0)
-                        y_proba = df_subgroup[f"proba_{label}"]
+                        y_true = df_subgroup[label].fillna(0).to_numpy()
+                        y_proba = df_subgroup[f"proba_{label}"].to_numpy()
                         auc = roc_auc_score(y_true,y_proba)
                         auprc = average_precision_score(y_true,y_proba)
-                        perf_file.write(f"\n{label},{subgroup},{round(auc,2)},{round(auprc,2)}")
+                        ci_auc = bootstrap(y_true,y_proba,roc_auc_score)
+                        ci_auprc = bootstrap(y_true,y_proba,average_precision_score)
+                        perf_file.write(f"\n{label},{subgroup},{round(auc,2)},{round(ci_auc[0],2)},{round(ci_auc[1],2)},{round(auprc,2)},{round(ci_auprc[0],2)},{round(ci_auprc[1],2)}")
+                
         # print(f"COMPUTING AUC FOR {args.model_name}:")
         # for label in labels:
         #     y_true = df[label].fillna(0)
