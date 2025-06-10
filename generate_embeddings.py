@@ -56,46 +56,29 @@ def save_embeddings(image_paths,label_texts,model,batch_size,save_file):
     np.save(f"{save_file}_texts",embeddings['text_embeds'])
 
 
-def save_probas(image_paths,label_texts,model,batch_size,save_file):
-    lst_probas = []
-    for i in tqdm.tqdm(range(len(image_paths)//batch_size),total=len(image_paths)//batch_size):
-        imgs_batch = image_paths[i*batch_size:(i+1)*batch_size]
-        
-        #Check whether text in lagel_texts are actual labels (then size of label_texts is different than the number of images) or reports (1 report per image)
-        if len(label_texts) != len(image_paths):
-            #Actual labels: same text for every batch
-            texts_batch = label_texts
-        else:
-            #Reports: the texts are also batched
-            texts_batch = label_texts[i*batch_size:(i+1)*batch_size]
-
-        probas = model.get_embeddings(imgs_batch,texts_batch)
-        print(probas)
-        break
-    return
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', default='medclip')
     parser.add_argument('--image_folder', default='./data/RSNA_png/')
     parser.add_argument('--batch_size', default=1, type=int)
-    parser.add_argument('--classification', default=False, type=bool)
+    parser.add_argument('--dataset', default='MIMIC')
 
     args, unknown = parser.parse_known_args()
 
-    #FOR RSNA
-    # df = pd.read_csv('./data/stage_2_train_labels.csv')
-    # df_unique = df.drop_duplicates(subset=['patientId'])
-
-    # df_unique['path'] = df_unique['patientId'].apply(lambda id:f'{args.image_folder}{id}.png')
-    # image_paths = df_unique['path'].to_numpy()[:]
-
     #FOR MIMIC
-    mimic_path = '/gpfs/workdir/shared/cpm4c/datasets/MIMIC/mimic/'
-    df = pd.read_csv(f'{mimic_path}test_preproc_filtered.csv')
-    df = df.dropna(subset=["findings"])
-    df['path_preproc'] = df['path_preproc'].apply(lambda img_path:f'{mimic_path}{img_path}')
-    image_paths = df['path_preproc'].to_numpy()[:32]
+    if args.dataset == "MIMIC":
+        mimic_path = '/gpfs/workdir/shared/cpm4c/datasets/MIMIC/mimic/'
+        df = pd.read_csv(f'{mimic_path}test_preproc_filtered.csv')
+        df = df.dropna(subset=["findings"])
+        df['path_preproc'] = df['path_preproc'].apply(lambda img_path:f'{mimic_path}{img_path}')
+        image_paths = df['path_preproc'].to_numpy()[:]
+        label_texts = df['findings'].to_list()[:]
+    elif args.dataset == "CXR14":
+        cxr14_path = "/gpfs/workdir/sourgetth/datasets/processed/CXR14"
+        df = pd.read_csv(f'{cxr14_path}/processed_labels_alldrains.csv')
+        df['path_preproc'] = df['Image Index'].apply(lambda img_path:f'{cxr14_path}/imgs/{img_path}')
+        image_paths = df['path_preproc'].to_numpy()[:]
+        label_texts = df['Finding Labels'].to_list()[:]
 
     with torch.no_grad():
         if args.model_name == 'medclip':
@@ -114,14 +97,8 @@ def main():
             print('Unknown model name, choose in the following list: medclip,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
             return
    
-        if args.classification:
-            label_texts = [
-                'No sign of abnormality',
-            ]
-            save_probas(image_paths,label_texts,model,args.batch_size,f'./data/probas/MIMIC/MIMIC_{args.model_name}')
-        else:
-            label_texts = df['findings'].to_list()[:]
-            save_embeddings(image_paths,label_texts,model,args.batch_size,f'./data/embeddings/MIMIC/MIMIC_{args.model_name}')
+    
+        save_embeddings(image_paths,label_texts,model,args.batch_size,f'./data/embeddings/{args.dataset}/{args.dataset}_{args.model_name}')
 
     
 if __name__ == "__main__":
