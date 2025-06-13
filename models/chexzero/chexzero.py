@@ -101,27 +101,40 @@ class Chexzero():
         dataset = CXRTestDataset(image_paths,self.transform)
         loader = torch.utils.data.DataLoader(dataset, shuffle=False)
         images_embeddings = []
-        for i, images in enumerate(loader):
-            batch_images_emb = self.model.encode_image(images)
-            batch_images_emb /= batch_images_emb.norm(dim=-1, keepdim=True)
-            images_embeddings += batch_images_emb.tolist()
-            
-        embeddings = {'img_embeds':images_embeddings,'text_embeds':[]}
-        # processed_txt = self.model.process_class_prompts(labels, self.device)
-        # processed_imgs = self.model.process_img(image_paths, self.device)
-        # img_emb_l, img_emb_g = self.model.image_encoder_forward(processed_imgs)
-        # text_embeddings = []
-        # for cls_name, cls_txt in processed_txt.items():
-        #     text_emb_l, text_emb_g, _ = self.model.text_encoder_forward(
-        #         cls_txt["caption_ids"], cls_txt["attention_mask"], cls_txt["token_type_ids"]
-        #     )
-        #     text_emb_g = text_emb_g.detach().cpu().numpy().tolist()
-        #     text_embeddings += text_emb_g
+        with torch.no_grad():
+            for i, images in enumerate(loader):
+                images = images.to(self.device)
+                batch_images_emb = self.model.encode_image(images)
+                batch_images_emb /= batch_images_emb.norm(dim=-1, keepdim=True)
+                images_embeddings += batch_images_emb.tolist()
+                images.cpu()
+            labels = clip.tokenize(labels, context_length=77).to(self.device)
+            text_embeds = self.model.encode_text(labels)
+            text_embeds /= text_embeds.norm(dim=-1, keepdim=True)
+            text_embeds = text_embeds.tolist()
 
-        # embeddings = {
-        #     'img_embeds':img_emb_g,
-        #     'text_embeds':text_embeddings
-        # }
-        
-        #Return the emddings
-        return embeddings 
+            embeddings = {'img_embeds':images_embeddings,'text_embeds':text_embeds}
+        return embeddings
+    
+    def get_predictions(self,image_paths,labels):
+        embeddings = self.get_embeddings(image_paths,labels)
+        image_embed = torch.Tensor(embeddings["img_embeds"])
+        label_embed = torch.Tensor(embeddings["text_embeds"])
+        logits = image_embed @ label_embed.T
+        softmaxs = logits.softmax(dim=1)
+        return softmaxs.tolist()
+    
+    def get_embeddings_and_predictions(self,image_paths,labels):
+        embeddings = self.get_embeddings(image_paths,labels)
+        image_embed = torch.Tensor(embeddings["img_embeds"])
+        label_embed = torch.Tensor(embeddings["text_embeds"])
+        logits = image_embed @ label_embed.T
+        softmaxs = logits.softmax(dim=1)
+
+        results = {
+            'img_embeds':embeddings['img_embeds'],
+            'text_embeds':embeddings['text_embeds'],
+            'softmaxs':softmaxs
+        }
+
+        return results

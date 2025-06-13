@@ -1,5 +1,5 @@
 # Fairness and Robustness of CLIP-Based Models for Chest X-rays
-This is the official repository of the paper ["Fairness and Robustness of CLIP-Based Models for Chest X-rays"](github.com/TheoSourget/clip_cxr_fairness) (under review). This repo contain the code to evaluate six CLIP-based architectures for the classification of chest X-rays.
+This repo contain the code to evaluate six CLIP-based architectures for the classification of chest X-rays.
 
 # How to install
 Clone the repo, create your environment and install the dependencies using the following commands (you may need to change your pytorch version to fit your system):
@@ -9,11 +9,21 @@ Clone the repo, create your environment and install the dependencies using the f
 git clone https://github.com/TheoSourget/clip_cxr_fairness.git
 
 #Create a new python env
-conda create --name vlm python=3.10
-conda activate vlm
+conda create --name clip_fairness python=3.10
+conda activate clip_fairness
 
 #Install the dependencies
 pip install -r requirements.txt
+``` 
+
+or
+
+```sh
+#Clone the repo
+git clone https://github.com/TheoSourget/clip_cxr_fairness.git
+
+#Create the env and install the dependencies
+make setup_env
 ``` 
 
 ## Models:
@@ -53,7 +63,7 @@ To generate the drains label launch drains_detection.py script after processing 
 ## Get the embeddings
 The script generate_embeddings.py can be used to generate the embeddings. An example using the following command:
 ```sh
-python generate_embeddings.py --model_name medimageinsight --batch_size 5
+python generate_embeddings.py --model_name medimageinsight --batch_size 32
 ``` 
 
 the options are:
