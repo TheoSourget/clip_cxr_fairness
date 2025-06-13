@@ -4,6 +4,7 @@ import seaborn as sns
 import numpy as np
 from pathlib import Path
 from sklearn.calibration import calibration_curve
+import matplotlib.colors as mcolors
 
 def generate_table_zeroshot_mimic(models,labels,group):
     with open("./reports/zeroshot_mimic.txt", "w") as text_file:
@@ -113,21 +114,37 @@ def generate_barplot_drains(models):
     plt.savefig(f"./reports/figures/subgroups_perf/pneumothorax_drains_auprc.png", bbox_inches='tight', dpi=300)
     plt.close()
 
-def generate_calibration_curves(models):
+def generate_calibration_curves(models, subgroup=True):
+    colors = list(mcolors.TABLEAU_COLORS)
     plt.figure(figsize=(10,10))
     plt.plot([0, 1], 
          [0, 1], 
-         linestyle='--', 
+         linestyle='dotted', 
          label='Perfectly Calibrated')
-    for model_name in models:
+    for i,model_name in enumerate(models):
         df_probas = pd.read_csv(f"./data/probas_CXR14/probas_CXR14_{model_name}.csv")
         y_true = df_probas["Pneumothorax"]
         y_proba = df_probas["proba_Pneumothorax"]
         prob_true, prob_pred = calibration_curve(y_true, y_proba, n_bins=10)
-        plt.plot(prob_pred,prob_true,marker='o',linewidth=1,label=models[model_name])
-    plt.title('Calibration Curves for all CLIP-based models')
-    plt.xlabel('Predicted Probability')
-    plt.ylabel('True Probability')
+        
+        if subgroup:
+            plt.plot(prob_pred,prob_true,linestyle='solid',marker='o',linewidth=1,color=colors[i],label=f'{models[model_name]}, all')
+            
+            y_true = df_probas[df_probas["Drain"]==1]["Pneumothorax"]
+            y_proba = df_probas[df_probas["Drain"]==1]["proba_Pneumothorax"]
+            prob_true, prob_pred = calibration_curve(y_true, y_proba, n_bins=10)
+            plt.plot(prob_pred,prob_true,linestyle='dashed',marker='^',linewidth=1,color=colors[i],label=f'{models[model_name]}, only drain')
+
+            y_true = df_probas[df_probas["Drain"]==0]["Pneumothorax"]
+            y_proba = df_probas[df_probas["Drain"]==0]["proba_Pneumothorax"]
+            prob_true, prob_pred = calibration_curve(y_true, y_proba, n_bins=10)
+            plt.plot(prob_pred,prob_true,linestyle='dashdot',marker='s',linewidth=1,color=colors[i],label=f'{models[model_name]}, no drain')
+        else:
+            plt.plot(prob_pred,prob_true,linestyle='solid',marker='o',linewidth=1,color=colors[i],label=f'{models[model_name]}')
+
+    plt.title('Calibration curves for all CLIP-based models')
+    plt.xlabel('Mean predicted probability')
+    plt.ylabel('Fraction of positives')
     plt.legend()
     plt.savefig(f"./reports/figures/calibration_cxr14.png", bbox_inches='tight', dpi=300)
     plt.close()
@@ -154,5 +171,5 @@ if __name__ == "__main__":
     # generate_barplot_subgroup(models,"MIMIC",["global","Female","Male"],"sex")
     # generate_barplot_subgroup(models,"MIMIC",["global","White","Black","Asian"],"race")
     # generate_barplot_subgroup(models,"MIMIC",["global","18-25","25-50","50-65","65-80","80+"],"age")
-    generate_barplot_drains(models)
-    generate_calibration_curves(models)
+    # generate_barplot_drains(models)
+    generate_calibration_curves(models,subgroup=False)
