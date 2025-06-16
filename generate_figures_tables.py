@@ -44,8 +44,11 @@ def generate_barplot_subgroup(models,dataset,groups,subgroup_name):
         Path(f"./reports/figures/subgroups_perf/{model_name}").mkdir(parents=True, exist_ok=True)
         df = pd.read_csv(f"./data/performance/{dataset}/zeroshot_{model_name}.csv")
         df_res = df[df["group"].isin(groups)]
-        plt.figure(figsize=(10,10))
+        plt.figure(figsize=(10,5))
         ax = sns.barplot(data=df_res, x='class', y='AUC', hue='group')
+        ax.legend_.remove()
+        ax.tick_params(labelsize=12)
+
         plt.title(f"AUC of {model_name} on the different subgroups of {subgroup_name}")
         ax.set_ylim(0,1)
 
@@ -58,8 +61,9 @@ def generate_barplot_subgroup(models,dataset,groups,subgroup_name):
         plt.savefig(f"./reports/figures/subgroups_perf/{model_name}/{subgroup_name}_{model_name}_auc.png", bbox_inches='tight', dpi=300)
         plt.close()
 
-        plt.figure(figsize=(10,10))
+        plt.figure(figsize=(10,5))
         ax = sns.barplot(data=df_res, x='class', y='AUPRC', hue='group')
+        ax.tick_params(labelsize=12)
         plt.title(f"AUPRC of {model_name} on the different subgroups of {subgroup_name}")
         ax.set_ylim(0,1)
         
@@ -69,7 +73,7 @@ def generate_barplot_subgroup(models,dataset,groups,subgroup_name):
         df_res["CI_AUPRC_up"] = df_res["CI_AUPRC_up"] - df_res["AUPRC"]
         yerr = list(np.array([df_res["CI_AUPRC_low"].tolist(),df_res["CI_AUPRC_up"].tolist()]))
         ax.errorbar(x=x_coords, y=y_coords, yerr=yerr, fmt="none", c="k")
-
+        plt.legend(fontsize='x-large')
         plt.savefig(f"./reports/figures/subgroups_perf/{model_name}/{subgroup_name}_{model_name}_auprc.png", bbox_inches='tight', dpi=300)
         plt.close()
 
@@ -87,10 +91,12 @@ def generate_barplot_drains(models):
         lst_df.append(df_model)
     
     df_results_combined = pd.concat(lst_df, axis=0, ignore_index=True)
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(10,5))
     ax = sns.barplot(data=df_results_combined, x='model', y='AUC', hue='group')
     plt.title(f"AUC of models on images with and without chest drains")
     ax.set_ylim(0,1)
+    ax.tick_params(labelsize=12)
+    ax.legend_.remove()
     x_coords = [p.get_x() + 0.5 * p.get_width() for p in ax.patches][:len(df_results_combined)]
     y_coords = [p.get_height() for p in ax.patches][:len(df_results_combined)]
     df_results_combined["CI_AUC_low"] = df_results_combined["AUC"] - df_results_combined["CI_AUC_low"]
@@ -100,23 +106,25 @@ def generate_barplot_drains(models):
     plt.savefig(f"./reports/figures/subgroups_perf/pneumothorax_drains_auc.png", bbox_inches='tight', dpi=300)
     plt.close()
 
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(10,5))
     ax = sns.barplot(data=df_results_combined, x='model', y='AUPRC', hue='group')
     plt.title(f"AUPRC of models on images with and without chest drains")
     ax.set_ylim(0,1)
-    
+    ax.tick_params(labelsize=12)
+
     x_coords = [p.get_x() + 0.5 * p.get_width() for p in ax.patches][:len(df_results_combined)]
     y_coords = [p.get_height() for p in ax.patches][:len(df_results_combined)]
     df_results_combined["CI_AUPRC_low"] = df_results_combined["AUPRC"] - df_results_combined["CI_AUPRC_low"]
     df_results_combined["CI_AUPRC_up"] = df_results_combined["CI_AUPRC_up"] - df_results_combined["AUPRC"]
     yerr = list(np.array([df_results_combined["CI_AUPRC_low"].tolist(),df_results_combined["CI_AUPRC_up"].tolist()]))
     ax.errorbar(x=x_coords, y=y_coords, yerr=yerr, fmt="none", c="k")
+    plt.legend(fontsize='x-large')
     plt.savefig(f"./reports/figures/subgroups_perf/pneumothorax_drains_auprc.png", bbox_inches='tight', dpi=300)
     plt.close()
 
 def generate_calibration_curves(models, subgroup=True):
     colors = list(mcolors.TABLEAU_COLORS)
-    plt.figure(figsize=(10,10))
+    plt.figure()
     plt.plot([0, 1], 
          [0, 1], 
          linestyle='dotted', 
@@ -145,7 +153,9 @@ def generate_calibration_curves(models, subgroup=True):
     plt.title('Calibration curves for all CLIP-based models')
     plt.xlabel('Mean predicted probability')
     plt.ylabel('Fraction of positives')
-    plt.legend()
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.legend(fontsize='x-large')
     plt.savefig(f"./reports/figures/calibration_cxr14.png", bbox_inches='tight', dpi=300)
     plt.close()
 
@@ -168,8 +178,8 @@ if __name__ == "__main__":
         'Pneumothorax',
     ]
     # generate_table_zeroshot_mimic(models,labels,"global")
-    # generate_barplot_subgroup(models,"MIMIC",["global","Female","Male"],"sex")
-    # generate_barplot_subgroup(models,"MIMIC",["global","White","Black","Asian"],"race")
-    # generate_barplot_subgroup(models,"MIMIC",["global","18-25","25-50","50-65","65-80","80+"],"age")
-    # generate_barplot_drains(models)
+    generate_barplot_subgroup(models,"MIMIC",["global","Female","Male"],"sex")
+    generate_barplot_subgroup(models,"MIMIC",["global","White","Black","Asian"],"race")
+    generate_barplot_subgroup(models,"MIMIC",["global","18-25","25-50","50-65","65-80","80+"],"age")
+    generate_barplot_drains(models)
     generate_calibration_curves(models,subgroup=False)

@@ -20,19 +20,34 @@ np.random.seed(1907)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_name', default='medclip')
+parser.add_argument('--dataset', default='MIMIC')
 parser.add_argument('--projection_type', default='PCA')
 
 args, unknown = parser.parse_known_args()
 model_name = args.model_name
 projection_type = args.projection_type
 
-df = pd.read_csv(f'./data/test_preproc_filtered.csv')
-df = df.dropna(subset=["findings"])
-df["age"] = df["age"].astype(int)
-df["age_label"] = pd.cut(df["age"],bins=[18,25,50,65,80,np.inf],labels=["18-25","25-50","50-65","65-80","80+"],right=False)
+if args.dataset == "MIMIC":
+    df = pd.read_csv(f'./data/test_preproc_filtered.csv')
+    df = df.dropna(subset=["findings"])
+    df["age"] = df["age"].astype(int)
+    df["age_label"] = pd.cut(df["age"],bins=[18,25,50,65,80,np.inf],labels=["18-25","25-50","50-65","65-80","80+"],right=False)
+    characteristics = {
+        "sex":df["sex"].unique(),
+        "race":df["race"].unique(),
+        "disease":df["disease"].unique(),
+        "ViewPosition":df["ViewPosition"].unique(),
+        "age_label":df["age_label"].unique()
+    }
+elif args.dataset == "CXR14":
+    cxr14_path = "/gpfs/workdir/sourgetth/datasets/processed/CXR14"
+    df = pd.read_csv(f'{cxr14_path}/processed_labels_alldrains.csv')
+    characteristics = {
+        "drains":df["Drain"].unique(),
+    }
 
-embeddings_images = np.load(f'./data/embeddings/MIMIC/MIMIC_{model_name}_images.npy')
-embeddings_texts = np.load(f'./data/embeddings/MIMIC/MIMIC_{model_name}_texts.npy')
+embeddings_images = np.load(f'./data/embeddings/{args.dataset}/{args.dataset}_{model_name}_images.npy')
+embeddings_texts = np.load(f'./data/embeddings/{args.dataset}/{args.dataset}_{model_name}_texts.npy')
 
 embeddings = np.concatenate((embeddings_images, embeddings_texts), axis=0)
 embedding_type = ["images" if i < len(embeddings_images) else "texts" for i in range(len(embeddings))] #0 for image embeddings and 1 for text embeddings
@@ -53,6 +68,9 @@ fig = sns.jointplot(x=projection_imagestexts[:,0], y=projection_imagestexts[:,1]
 fig.ax_joint.legend(loc='upper right')
 plt.xlabel(f"{projection_type} 1")
 plt.ylabel(f"{projection_type} 2")
+plt.axis('off')
+plt.legend(fontsize='large')
+
 plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_modality.png", bbox_inches='tight', dpi=300)
 plt.close()
 
@@ -63,17 +81,10 @@ diff = np.abs(centroid_img - centroid_txt)
 diff_ordered = diff[np.argsort(diff)[::-1]]
 plt.figure()
 plt.plot(range(len(diff)),diff_ordered)
+plt.legend(fontsize='large')
 plt.savefig(f"./reports/figures/diff_embeddings/{model_name}/diff_{model_name}_modalities.png")
 plt.close()
 
-
-characteristics = {
-    "sex":df["sex"].unique(),
-    "race":df["race"].unique(),
-    "disease":df["disease"].unique(),
-    "ViewPosition":df["ViewPosition"].unique(),
-    "age_label":df["age_label"].unique()
-}
 
 for charac in characteristics:
     Path(f"./reports/figures/diff_embeddings/{model_name}/{charac}").mkdir(parents=True, exist_ok=True)
@@ -86,6 +97,8 @@ for charac in characteristics:
     fig.ax_joint.legend(loc='upper right')
     plt.xlabel(f"{projection_type} 1")
     plt.ylabel(f"{projection_type} 2")
+    plt.axis('off')
+    plt.legend(fontsize='large')
     plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_{charac.lower()}_imagestexts.png", bbox_inches='tight', dpi=300)
     plt.close()
 
@@ -96,6 +109,8 @@ for charac in characteristics:
     fig.ax_joint.legend(loc='upper right')
     plt.xlabel(f"{projection_type} 1")
     plt.ylabel(f"{projection_type} 2")
+    plt.axis('off')
+    plt.legend(fontsize='large')
     plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_{charac.lower()}_images.png", bbox_inches='tight', dpi=300)
     plt.close()
 
@@ -106,6 +121,8 @@ for charac in characteristics:
     fig.ax_joint.legend(loc='upper right')
     plt.xlabel(f"{projection_type} 1")
     plt.ylabel(f"{projection_type} 2")
+    plt.axis('off')
+    plt.legend(fontsize='large')
     plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_{charac.lower()}_texts.png", bbox_inches='tight', dpi=300)
     plt.close()
     
