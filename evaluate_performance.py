@@ -89,35 +89,36 @@ def main():
 
     image_paths = df['path_preproc'].to_numpy()[:]
     with torch.no_grad():
-        # if args.model_name == 'medclip':
-        #     model = MedCLIP()
-        # elif args.model_name == 'biovil':
-        #     model = Biovil(image_model="biovil")
-        # elif args.model_name == 'biovil-t':
-        #     model = Biovil(image_model="biovil-t")
-        # elif args.model_name == 'medimageinsight':
-        #     model = MedImageInsightWrapper()
-        # elif args.model_name == 'chexzero':
-        #     model = Chexzero()
-        # elif args.model_name == 'cxrclip':
-        #     model = Cxrclip()
-        # else:
-        #     print('Unknown model name, choose in the following list: medclip,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
-        #     return
+        if args.model_name == 'medclip':
+            model = MedCLIP()
+        elif args.model_name == 'biovil':
+            model = Biovil(image_model="biovil")
+        elif args.model_name == 'biovil-t':
+            model = Biovil(image_model="biovil-t")
+        elif args.model_name == 'medimageinsight':
+            model = MedImageInsightWrapper()
+        elif args.model_name == 'chexzero':
+            model = Chexzero()
+        elif args.model_name == 'cxrclip':
+            model = Cxrclip()
+        else:
+            print('Unknown model name, choose in the following list: medclip,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
+            return
    
-        # print("Computing predictions")
-        # lst_probas = compute_probas(image_paths,labels,model,args.batch_size)
-        # for label in labels:
-        #     df[f"proba_{label}"] = lst_probas[f"{label}"]
+        print("Computing predictions")
+        lst_probas = compute_probas(image_paths,labels,model,args.batch_size)
+        for label in labels:
+            df[f"proba_{label}"] = lst_probas[f"{label}"]
         
-        # Path(f"./data/probas_{args.dataset}/").mkdir(parents=True, exist_ok=True)
-        # df.to_csv(f"./data/probas_{args.dataset}/probas_{args.dataset}_{args.model_name}.csv")
+        Path(f"./data/probas_{args.dataset}/").mkdir(parents=True, exist_ok=True)
+        df.to_csv(f"./data/probas_{args.dataset}/probas_{args.dataset}_{args.model_name}.csv")
 
         df = pd.read_csv(f"./data/probas_{args.dataset}/probas_{args.dataset}_{args.model_name}.csv")
-        # df["age"] = df["age"].astype(int)
-        # df["age_group"] = pd.cut(df["age"],bins=[18,25,50,65,80,np.inf],labels=["18-25","25-50","50-65","65-80","80+"],right=False)
-        # df = df.sort_values(by=["age"])
-        
+        if args.dataset == "MIMIC":
+            df["age"] = df["age"].astype(int)
+            df["age_group"] = pd.cut(df["age"],bins=[18,25,50,65,80,np.inf],labels=["18-25","25-50","50-65","65-80","80+"],right=False)
+            df = df.sort_values(by=["age"])
+            
         Path(f"./data/performance/{args.dataset}/").mkdir(parents=True, exist_ok=True)
         with open(f"./data/performance/{args.dataset}/zeroshot_{args.model_name}.csv","w") as perf_file:
             perf_file.write("class,group,AUC,CI_AUC_low,CI_AUC_up,AUPRC,CI_AUPRC_low,CI_AUPRC_up")
@@ -129,7 +130,6 @@ def main():
                 ci_auc = bootstrap(y_true,y_proba,roc_auc_score)
                 ci_auprc = bootstrap(y_true,y_proba,average_precision_score)
                 perf_file.write(f"\n{label},global,{round(auc,2)},{round(ci_auc[0],2)},{round(ci_auc[1],2)},{round(auprc,2)},{round(ci_auprc[0],2)},{round(ci_auprc[1],2)}")
-                # df[["dicom_id",label,f"proba_{label}"]].fillna(0).sort_values(by=[f"proba_{label}"]).to_csv(f"./data/ordered_proba__{args.model_name}_{label}.csv")
                 for attribute in attributes:
                     attribute_values = df[attribute].unique()
                     for subgroup in attribute_values:
@@ -142,12 +142,5 @@ def main():
                         ci_auprc = bootstrap(y_true,y_proba,average_precision_score)
                         perf_file.write(f"\n{label},{subgroup},{round(auc,2)},{round(ci_auc[0],2)},{round(ci_auc[1],2)},{round(auprc,2)},{round(ci_auprc[0],2)},{round(ci_auprc[1],2)}")
                 
-        # print(f"COMPUTING AUC FOR {args.model_name}:")
-        # for label in labels:
-        #     y_true = df[label].fillna(0)
-        #     y_pred = df[f"proba_{label}"]
-        #     auc = roc_auc_score(y_true,y_pred)
-        #     print(label,auc)
-
 if __name__ == "__main__":
     main()

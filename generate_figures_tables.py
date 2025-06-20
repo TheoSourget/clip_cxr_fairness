@@ -44,33 +44,36 @@ def generate_barplot_subgroup(models,dataset,groups,subgroup_name):
         Path(f"./reports/figures/subgroups_perf/{model_name}").mkdir(parents=True, exist_ok=True)
         df = pd.read_csv(f"./data/performance/{dataset}/zeroshot_{model_name}.csv")
         df_res = df[df["group"].isin(groups)]
+        df_res['group'] = pd.Categorical(df_res['group'], groups)
+        df_res["CI_AUC_low"] = df_res["AUC"] - df_res["CI_AUC_low"]
+        df_res["CI_AUC_up"] = df_res["CI_AUC_up"] - df_res["AUC"]
+        df_res["CI_AUPRC_low"] = df_res["AUPRC"] - df_res["CI_AUPRC_low"]
+        df_res["CI_AUPRC_up"] = df_res["CI_AUPRC_up"] - df_res["AUPRC"]
+        df_res = df_res.sort_values(['group','class'])
         plt.figure(figsize=(10,5))
-        ax = sns.barplot(data=df_res, x='class', y='AUC', hue='group')
+        ax = sns.barplot(data=df_res, x='class', y='AUC', hue='group',hue_order=groups)
         ax.legend_.remove()
         ax.tick_params(labelsize=12)
 
-        plt.title(f"AUC of {model_name} on the different subgroups of {subgroup_name}")
+        plt.title(f"AUC per subgroup of {subgroup_name}",fontdict = {'fontsize' : 30})
         ax.set_ylim(0,1)
 
         x_coords = [p.get_x() + 0.5 * p.get_width() for p in ax.patches][:len(df_res)]
         y_coords = [p.get_height() for p in ax.patches][:len(df_res)]
-        df_res["CI_AUC_low"] = df_res["AUC"] - df_res["CI_AUC_low"]
-        df_res["CI_AUC_up"] = df_res["CI_AUC_up"] - df_res["AUC"]
         yerr = list(np.array([df_res["CI_AUC_low"].tolist(),df_res["CI_AUC_up"].tolist()]))
+
         ax.errorbar(x=x_coords, y=y_coords, yerr=yerr, fmt="none", c="k")
         plt.savefig(f"./reports/figures/subgroups_perf/{model_name}/{subgroup_name}_{model_name}_auc.png", bbox_inches='tight', dpi=300)
         plt.close()
 
         plt.figure(figsize=(10,5))
-        ax = sns.barplot(data=df_res, x='class', y='AUPRC', hue='group')
+        ax = sns.barplot(data=df_res, x='class', y='AUPRC', hue='group',hue_order=groups)
         ax.tick_params(labelsize=12)
-        plt.title(f"AUPRC of {model_name} on the different subgroups of {subgroup_name}")
+        plt.title(f"AUPRC per subgroup of {subgroup_name}",fontdict = {'fontsize' : 30})
         ax.set_ylim(0,1)
         
         x_coords = [p.get_x() + 0.5 * p.get_width() for p in ax.patches][:len(df_res)]
         y_coords = [p.get_height() for p in ax.patches][:len(df_res)]
-        df_res["CI_AUPRC_low"] = df_res["AUPRC"] - df_res["CI_AUPRC_low"]
-        df_res["CI_AUPRC_up"] = df_res["CI_AUPRC_up"] - df_res["AUPRC"]
         yerr = list(np.array([df_res["CI_AUPRC_low"].tolist(),df_res["CI_AUPRC_up"].tolist()]))
         ax.errorbar(x=x_coords, y=y_coords, yerr=yerr, fmt="none", c="k")
         plt.legend(fontsize='x-large')
@@ -177,7 +180,7 @@ if __name__ == "__main__":
         'Pneumonia',
         'Pneumothorax',
     ]
-    # generate_table_zeroshot_mimic(models,labels,"global")
+    generate_table_zeroshot_mimic(models,labels,"global")
     generate_barplot_subgroup(models,"MIMIC",["global","Female","Male"],"sex")
     generate_barplot_subgroup(models,"MIMIC",["global","White","Black","Asian"],"race")
     generate_barplot_subgroup(models,"MIMIC",["global","18-25","25-50","50-65","65-80","80+"],"age")
