@@ -1,3 +1,6 @@
+"""
+Generate the Drain label for the whole NIH-CXR14 dataset using annotation from the NEATX dataset
+"""
 import argparse
 
 import cv2
@@ -20,7 +23,9 @@ from tqdm import tqdm
 torch.manual_seed(1907)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
+"""
+Define the Pytorch dataset
+"""
 class TubesDataset(Dataset):
     def __init__(self, labels,data_path):
         self.labels = labels
@@ -108,12 +113,12 @@ def main():
         model.load_state_dict(torch.load(args.weights,map_location=torch.device('cpu')))
     model.to(DEVICE)
     df_tubes = pd.read_csv(f"{args.data_path}/processed_labels.csv")
+    #If option is set, train the drains detection models
     if args.train:
         print("START TRAINING")
         criterion = torch.nn.BCEWithLogitsLoss()
         criterion.requires_grad = True
         optimizer = optim.Adam(model.parameters(),lr=args.lr)
-        
         
         df_tubes_annotations = df_tubes[df_tubes["Drain"]!=-1]
         train_test_split = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=1907)
@@ -134,6 +139,7 @@ def main():
                 print("Train metrics:",train_loss,train_metric)
                 print("Test metrics:",test_loss,test_metric)
 
+    #Apply the model to unannotated data
     df_tubes_to_annotate = df_tubes[df_tubes["Drain"]==-1]
     to_annotate_data = TubesDataset(labels=df_tubes_to_annotate,data_path=args.data_path)
     to_annotate_dataloader = DataLoader(to_annotate_data, batch_size=args.batch_size)
