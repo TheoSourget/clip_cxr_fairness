@@ -27,6 +27,7 @@ args, unknown = parser.parse_known_args()
 model_name = args.model_name
 projection_type = args.projection_type
 
+#Load the labels and attribute to use as groups
 if args.dataset == "MIMIC":
     df = pd.read_csv(f'./data/test_preproc_filtered.csv')
     df = df.dropna(subset=["findings"])
@@ -35,8 +36,6 @@ if args.dataset == "MIMIC":
     characteristics = {
         "sex":df["sex"].unique(),
         "race":df["race"].unique(),
-        "disease":df["disease"].unique(),
-        "ViewPosition":df["ViewPosition"].unique(),
         "age_label":df["age_label"].unique()
     }
 elif args.dataset == "CXR14":
@@ -46,6 +45,7 @@ elif args.dataset == "CXR14":
         "drains":df["Drain"].unique(),
     }
 
+#Load image and text embeddings
 embeddings_images = np.load(f'./data/embeddings/{args.dataset}/{args.dataset}_{model_name}_images.npy')
 embeddings_texts = np.load(f'./data/embeddings/{args.dataset}/{args.dataset}_{model_name}_texts.npy')
 
@@ -57,12 +57,16 @@ if projection_type == "PCA":
 elif projection_type == "TSNE":
     projection = TSNE(n_components=2, learning_rate="auto",random_state=1907)
 
+#If needed create the folder to save the plots
 Path(f"./reports/figures/{projection_type}/{model_name}").mkdir(parents=True, exist_ok=True)
 
+#Project the embeddings using the algorithm chosen
 projection_imagestexts = projection.fit_transform(embeddings)
 projection_images = projection.fit_transform(embeddings_images)
 projection_texts = projection.fit_transform(embeddings_texts)
 
+
+#Colored by the modality (see Fig 2.a)
 sns.set_theme(style="white", palette=None)
 fig = sns.jointplot(x=projection_imagestexts[:,0], y=projection_imagestexts[:,1], xlim=(min(-1,min(projection_imagestexts[:,0])),max(1,max(projection_imagestexts[:,0]))), ylim=(min(-1,min(projection_imagestexts[:,1])),max(1,max(projection_imagestexts[:,1]))), hue=embedding_type, kind='scatter', alpha=0.6, marker='o', s=40, hue_order=["images","texts"], joint_kws=dict(rasterized=True))
 fig.ax_joint.legend(loc='upper right')
@@ -70,13 +74,15 @@ plt.xlabel(f"{projection_type} 1")
 plt.ylabel(f"{projection_type} 2")
 plt.axis('off')
 plt.legend(fontsize='large')
-
 plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_modality.png", bbox_inches='tight', dpi=300)
 plt.close()
 
 Path(f"./reports/figures/diff_embeddings/{model_name}").mkdir(parents=True, exist_ok=True)
+#Compute the centroid (mean) of image and text embeddings
 centroid_img = embeddings_images.mean(axis=0)
 centroid_txt = embeddings_texts.mean(axis=0)
+
+#Compute and order the difference at each dimensions between the two cendroids (see Fig 3.a)
 diff = np.abs(centroid_img - centroid_txt)
 diff_ordered = diff[np.argsort(diff)[::-1]]
 plt.figure()
@@ -85,7 +91,7 @@ plt.legend(fontsize='large')
 plt.savefig(f"./reports/figures/diff_embeddings/{model_name}/diff_{model_name}_modalities.png")
 plt.close()
 
-
+#Plot for each attribute the scatter plot colored on this attribute (See Fig 2.b-d) and the difference of centroid (Fig 3.b)
 for charac in characteristics:
     Path(f"./reports/figures/diff_embeddings/{model_name}/{charac}").mkdir(parents=True, exist_ok=True)
 
@@ -126,11 +132,13 @@ for charac in characteristics:
     plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_{charac.lower()}_texts.png", bbox_inches='tight', dpi=300)
     plt.close()
     
+    #For each group compute the cendroid (mean) of its embeddings
     centroid_groups = []
     for group in characteristics[charac]:
         current_group_embeddings = embeddings_images[np.where(np.array(lst_charac)==group)]
         centroid_groups.append(current_group_embeddings.mean(axis=0))
 
+    #For each pair of group compute the difference between each dimensions of their centroid, ordered it from the biggest difference to the smallest and plot it
     for i in range(len(centroid_groups)-1):
         emb1 = centroid_groups[i]
         for j in range(i+1,len(centroid_groups)):
