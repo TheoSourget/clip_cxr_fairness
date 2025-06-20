@@ -32,12 +32,13 @@ def save_embeddings(image_paths,label_texts,model,batch_size,save_file):
         batch_embedding = model.get_embeddings(imgs_batch,texts_batch)
         embeddings['img_embeds'] += batch_embedding['img_embeds']
         
+        #Only save the text embeddings once if the text are labels (same for every batch), otherwise add them at every batch
         if len(label_texts) != len(image_paths):
             embeddings['text_embeds'] = batch_embedding['text_embeds']
         else:
             embeddings['text_embeds'] += batch_embedding['text_embeds']
 
-    
+    #Extra step if needed for the last samples of the dataset
     if (len(image_paths)%batch_size != 0) and (len(image_paths)>batch_size):
         imgs_batch = image_paths[len(image_paths)-(len(image_paths)%batch_size):]
         if len(label_texts) != len(image_paths):
@@ -52,6 +53,7 @@ def save_embeddings(image_paths,label_texts,model,batch_size,save_file):
         else:
             embeddings['text_embeds'] += batch_embedding['text_embeds']
 
+    #Save the embeddings
     np.save(f"{save_file}_images",embeddings['img_embeds'])
     np.save(f"{save_file}_texts",embeddings['text_embeds'])
 
@@ -65,6 +67,7 @@ def main():
 
     args, unknown = parser.parse_known_args()
 
+    #Load the dataset
     #FOR MIMIC
     if args.dataset == "MIMIC":
         mimic_path = '/gpfs/workdir/shared/cpm4c/datasets/MIMIC/mimic/'
@@ -81,6 +84,7 @@ def main():
         label_texts = df['Finding Labels'].to_list()[:]
 
     with torch.no_grad():
+        #Load the model
         if args.model_name == 'medclip':
             model = MedCLIP()
         elif args.model_name == 'biovil':
@@ -97,7 +101,7 @@ def main():
             print('Unknown model name, choose in the following list: medclip,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
             return
    
-    
+        #Compute and save the embeddings
         save_embeddings(image_paths,label_texts,model,args.batch_size,f'./data/embeddings/{args.dataset}/{args.dataset}_{args.model_name}')
 
     
