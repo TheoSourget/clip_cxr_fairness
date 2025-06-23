@@ -87,7 +87,8 @@ diff = np.abs(centroid_img - centroid_txt)
 diff_ordered = diff[np.argsort(diff)[::-1]]
 plt.figure()
 plt.plot(range(len(diff)),diff_ordered)
-plt.legend(fontsize='large')
+plt.xlabel("Sorted embedding dimension",fontdict = {'fontsize' : 15})
+plt.ylabel("Absolute difference between the centroids",fontdict = {'fontsize' : 15})
 plt.savefig(f"./reports/figures/diff_embeddings/{model_name}/diff_{model_name}_modalities.png")
 plt.close()
 
@@ -148,6 +149,8 @@ for charac in characteristics:
                 diff_ordered = diff[np.argsort(diff)[::-1]]
                 plt.figure()
                 plt.plot(range(len(diff)),diff_ordered)
+                plt.xlabel("Sorted embedding dimension",fontdict = {'fontsize' : 15})
+                plt.ylabel("Absolute difference between the centroids",fontdict = {'fontsize' : 15})
                 plt.savefig(f"./reports/figures/diff_embeddings/{model_name}/{charac}/diff_{model_name}_{charac}_{characteristics[charac][i]}_{characteristics[charac][j]}.png")
                 plt.close()
         

@@ -34,21 +34,22 @@ def generate_table_zeroshot_mimic(models,labels,group):
             text_file.write(line)
         text_file.write("\t\\hline\n")
         text_file.write("\t\\end{tabular}\n")
-        text_file.write("\t\\caption{AUC and AUCPR of zeroshot classification}\n")
+        text_file.write("\t\\caption{AUC and AUPRC of zeroshot classification}\n")
         text_file.write("\t\\label{tab:zeroshot_perf}\n")
         text_file.write("\\end{table}\n")
 
 def generate_barplot_subgroup(models,dataset,groups,subgroup_name):
     print(subgroup_name)
     for model_name in models:
+        print(model_name)
         Path(f"./reports/figures/subgroups_perf/{model_name}").mkdir(parents=True, exist_ok=True)
         df = pd.read_csv(f"./data/performance/{dataset}/zeroshot_{model_name}.csv")
         df_res = df[df["group"].isin(groups)]
         df_res['group'] = pd.Categorical(df_res['group'], groups)
         df_res["CI_AUC_low"] = df_res["AUC"] - df_res["CI_AUC_low"]
         df_res["CI_AUC_up"] = df_res["CI_AUC_up"] - df_res["AUC"]
-        df_res["CI_AUPRC_low"] = df_res["AUPRC"] - df_res["CI_AUPRC_low"]
-        df_res["CI_AUPRC_up"] = df_res["CI_AUPRC_up"] - df_res["AUPRC"]
+        df_res["CI_AUPRC_low"] = abs(df_res["AUPRC"] - df_res["CI_AUPRC_low"])
+        df_res["CI_AUPRC_up"] = abs(df_res["CI_AUPRC_up"] - df_res["AUPRC"])
         df_res = df_res.sort_values(['group','class'])
         plt.figure(figsize=(10,5))
         ax = sns.barplot(data=df_res, x='class', y='AUC', hue='group',hue_order=groups)
@@ -70,7 +71,7 @@ def generate_barplot_subgroup(models,dataset,groups,subgroup_name):
         ax = sns.barplot(data=df_res, x='class', y='AUPRC', hue='group',hue_order=groups)
         ax.tick_params(labelsize=12)
         plt.title(f"AUPRC per subgroup of {subgroup_name}",fontdict = {'fontsize' : 30})
-        ax.set_ylim(0,1)
+        # ax.set_ylim(0,1)
         
         x_coords = [p.get_x() + 0.5 * p.get_width() for p in ax.patches][:len(df_res)]
         y_coords = [p.get_height() for p in ax.patches][:len(df_res)]
@@ -163,6 +164,7 @@ def generate_calibration_curves(models, subgroup=True):
     plt.close()
 
 if __name__ == "__main__":
+    #Define the models and labels used in the tables/figures
     models = {
         "medclip":"MedCLIP",
         "biovil":"Biovil",
@@ -185,4 +187,4 @@ if __name__ == "__main__":
     generate_barplot_subgroup(models,"MIMIC",["global","White","Black","Asian"],"race")
     generate_barplot_subgroup(models,"MIMIC",["global","18-25","25-50","50-65","65-80","80+"],"age")
     generate_barplot_drains(models)
-    generate_calibration_curves(models,subgroup=False)
+    # generate_calibration_curves(models,subgroup=False)
