@@ -55,12 +55,18 @@ if args.classification_head == 'mlp':
     #List of possible layer_size for the hyperparameter tuning
     hp_name = "hidden_layer_sizes"
     hyperparams = {hp_name:[(128,),(256,),(512,),(1024,)]}
-
+elif args.classification_head == 'lp':
+    hp_name = "learning_rate_init"
+    hyperparams = {hp_name:[0.001,0.0001,0.00001]}
+    params = {"hidden_layer_sizes":(),"alpha":0,"max_iter":1000}
+    clf_class = MLPClassifier
 else:
     clf_class = KNeighborsClassifier
     #List of possible k for the hyperparameter tuning
     hp_name = "n_neighbors"
     hyperparams = {hp_name:[1,3,5,7,9,11,13,15,17,19,21]}
+    params = None
+
 
 for train_val_idx, test_idx in train_test_split.split(df, groups=df['subject_id']):
     df_train_val = df.iloc[train_val_idx]
@@ -97,8 +103,10 @@ for train_val_idx, test_idx in train_test_split.split(df, groups=df['subject_id'
         lst_auc_val = []
         #select best hyperparam
         for p in hyperparams[hp_name]:
-
-            clf = clf_class(**{hp_name:p})
+            if params:
+                clf = clf_class(**params,**{hp_name:p})
+            else:
+                clf = clf_class(**{hp_name:p})
             clf.fit(x_train,y_train)
             probas_val = clf.predict_proba(x_val)
             pred_val = np.argmax(probas_val, axis=1)
@@ -109,9 +117,12 @@ for train_val_idx, test_idx in train_test_split.split(df, groups=df['subject_id'
             auc = roc_auc_score(y_val,probas_val,multi_class='ovr')
             lst_auc_val.append(auc)
         
-        #Retrain on best k
+        #Retrain on best param
         best_p = hyperparams[hp_name][np.argmax(lst_auc_val)]
-        clf = clf_class(**{hp_name:best_p})
+        if params:
+            clf = clf_class(**params,**{hp_name:best_p})
+        else:
+            clf = clf_class(**{hp_name:best_p})
         clf.fit(x_train_val,y_train_val)
 
         # Apply PCA or TSNE if chosen in the call parameter
