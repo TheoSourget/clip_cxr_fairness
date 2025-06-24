@@ -38,7 +38,7 @@ def generate_table_zeroshot_mimic(models,labels,group):
         text_file.write("\t\\label{tab:zeroshot_perf}\n")
         text_file.write("\\end{table}\n")
 
-def generate_barplot_subgroup(models,dataset,groups,subgroup_name):
+def generate_barplot_subgroup(models,dataset,groups,subgroup_name,x_label=True):
     print(subgroup_name)
     for model_name in models:
         print(model_name)
@@ -54,10 +54,19 @@ def generate_barplot_subgroup(models,dataset,groups,subgroup_name):
         plt.figure(figsize=(10,5))
         ax = sns.barplot(data=df_res, x='class', y='AUC', hue='group',hue_order=groups)
         ax.legend_.remove()
-        ax.tick_params(labelsize=12)
-
+        ax.tick_params(axis='y',labelsize=20)
+        ax.set_ylabel("AUC",fontdict = {'fontsize' : 20})
         plt.title(f"AUC per subgroup of {subgroup_name}",fontdict = {'fontsize' : 30})
         ax.set_ylim(0,1)
+        
+        if x_label:
+            ax.set_xlabel("Class",fontdict = {'fontsize' : 20})
+            ax.tick_params(axis='x',labelsize=20)
+            plt.xticks(rotation=25)
+
+        else:
+            ax.set_xticklabels([])
+            ax.set_xlabel("")
 
         x_coords = [p.get_x() + 0.5 * p.get_width() for p in ax.patches][:len(df_res)]
         y_coords = [p.get_height() for p in ax.patches][:len(df_res)]
@@ -69,15 +78,25 @@ def generate_barplot_subgroup(models,dataset,groups,subgroup_name):
 
         plt.figure(figsize=(10,5))
         ax = sns.barplot(data=df_res, x='class', y='AUPRC', hue='group',hue_order=groups)
-        ax.tick_params(labelsize=12)
-        plt.title(f"AUPRC per subgroup of {subgroup_name}",fontdict = {'fontsize' : 30})
-        # ax.set_ylim(0,1)
+        ax.tick_params(axis='y',labelsize=20)
+        ax.set_ylabel(r"$AUPRC_{adj}$",fontdict = {'fontsize' : 20})
+        ax.set_ylim(0,1)
+
+        plt.title(r"$AUPRC_{adj}$"+f" per subgroup of {subgroup_name}",fontdict = {'fontsize' : 30})
+        
+        if x_label:
+            ax.set_xlabel("Class",fontdict = {'fontsize' : 20})
+            ax.tick_params(axis='x',labelsize=20)
+            plt.xticks(rotation=25)
+        else:
+            ax.set_xlabel("")
+            ax.set_xticklabels([])
         
         x_coords = [p.get_x() + 0.5 * p.get_width() for p in ax.patches][:len(df_res)]
         y_coords = [p.get_height() for p in ax.patches][:len(df_res)]
         yerr = list(np.array([df_res["CI_AUPRC_low"].tolist(),df_res["CI_AUPRC_up"].tolist()]))
         ax.errorbar(x=x_coords, y=y_coords, yerr=yerr, fmt="none", c="k")
-        plt.legend(fontsize='x-large')
+        plt.legend(fontsize=25,loc='center left',bbox_to_anchor=(1, 0.5))
         plt.savefig(f"./reports/figures/subgroups_perf/{model_name}/{subgroup_name}_{model_name}_auprc.png", bbox_inches='tight', dpi=300)
         plt.close()
 
@@ -97,9 +116,13 @@ def generate_barplot_drains(models):
     df_results_combined = pd.concat(lst_df, axis=0, ignore_index=True)
     plt.figure(figsize=(10,5))
     ax = sns.barplot(data=df_results_combined, x='model', y='AUC', hue='group')
-    plt.title(f"AUC of models on images with and without chest drains")
+    ax.set_ylabel(r"AUC",fontdict = {'fontsize' : 25})
+    ax.set_xlabel("")
+    # plt.title(f"AUC of models on images with and without chest drains")
     ax.set_ylim(0,1)
-    ax.tick_params(labelsize=12)
+    ax.tick_params(labelsize=25)
+    plt.xticks(rotation=45)
+
     ax.legend_.remove()
     x_coords = [p.get_x() + 0.5 * p.get_width() for p in ax.patches][:len(df_results_combined)]
     y_coords = [p.get_height() for p in ax.patches][:len(df_results_combined)]
@@ -112,9 +135,12 @@ def generate_barplot_drains(models):
 
     plt.figure(figsize=(10,5))
     ax = sns.barplot(data=df_results_combined, x='model', y='AUPRC', hue='group')
-    plt.title(f"AUPRC of models on images with and without chest drains")
+    ax.set_ylabel(r"$AUPRC_{adj}$",fontdict = {'fontsize' : 25})
+    ax.set_xlabel("")
+    # plt.title(r"$\widehat{AUPRC}$ of models on images with and without chest drains")
     ax.set_ylim(0,1)
-    ax.tick_params(labelsize=12)
+    ax.tick_params(labelsize=25)
+    plt.xticks(rotation=45)
 
     x_coords = [p.get_x() + 0.5 * p.get_width() for p in ax.patches][:len(df_results_combined)]
     y_coords = [p.get_height() for p in ax.patches][:len(df_results_combined)]
@@ -122,7 +148,7 @@ def generate_barplot_drains(models):
     df_results_combined["CI_AUPRC_up"] = df_results_combined["CI_AUPRC_up"] - df_results_combined["AUPRC"]
     yerr = list(np.array([df_results_combined["CI_AUPRC_low"].tolist(),df_results_combined["CI_AUPRC_up"].tolist()]))
     ax.errorbar(x=x_coords, y=y_coords, yerr=yerr, fmt="none", c="k")
-    plt.legend(fontsize='x-large')
+    plt.legend(fontsize=25,)
     plt.savefig(f"./reports/figures/subgroups_perf/pneumothorax_drains_auprc.png", bbox_inches='tight', dpi=300)
     plt.close()
 
@@ -154,12 +180,12 @@ def generate_calibration_curves(models, subgroup=True):
         else:
             plt.plot(prob_pred,prob_true,linestyle='solid',marker='o',linewidth=1,color=colors[i],label=f'{models[model_name]}')
 
-    plt.title('Calibration curves for all CLIP-based models')
-    plt.xlabel('Mean predicted probability')
-    plt.ylabel('Fraction of positives')
-    plt.xticks(fontsize=12)
-    plt.yticks(fontsize=12)
-    plt.legend(fontsize='x-large')
+    # plt.title('Calibration curves for all CLIP-based models')
+    plt.xlabel('Mean predicted probability',fontdict = {'fontsize' : 20})
+    plt.ylabel('Fraction of positives',fontdict = {'fontsize' : 20})
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.legend(fontsize=15)
     plt.savefig(f"./reports/figures/calibration_cxr14.png", bbox_inches='tight', dpi=300)
     plt.close()
 
@@ -182,9 +208,9 @@ if __name__ == "__main__":
         'Pneumonia',
         'Pneumothorax',
     ]
-    generate_table_zeroshot_mimic(models,labels,"global")
-    generate_barplot_subgroup(models,"MIMIC",["global","Female","Male"],"sex")
-    generate_barplot_subgroup(models,"MIMIC",["global","White","Black","Asian"],"race")
-    generate_barplot_subgroup(models,"MIMIC",["global","18-25","25-50","50-65","65-80","80+"],"age")
+    # generate_table_zeroshot_mimic(models,labels,"global")
+    generate_barplot_subgroup(models,"MIMIC",["global","Female","Male"],"sex",x_label=False)
+    generate_barplot_subgroup(models,"MIMIC",["global","White","Black","Asian"],"race",x_label=True)
+    generate_barplot_subgroup(models,"MIMIC",["global","18-25","25-50","50-65","65-80","80+"],"age",x_label=False)
     generate_barplot_drains(models)
     # generate_calibration_curves(models,subgroup=False)

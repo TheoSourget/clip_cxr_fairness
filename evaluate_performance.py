@@ -170,10 +170,11 @@ def main():
                 if args.dataset == "CXR14":
                     pneumothorax_only_drains = df[(df["Pneumothorax"])&(df["Drain"] == 1)]
                     pneumothorax_no_drains = df[(df["Pneumothorax"])&(df["Drain"] == 0)]
-                    healthy_no_drains = df[(~df["Pneumothorax"])&(df["Drain"] == 0)]
+                    # healthy_no_drains = df[(~df["Pneumothorax"])&(df["Drain"] == 0)]
+                    healthy = df[(~df["Pneumothorax"])]
 
                     #Without drains
-                    df_eval = pd.concat([pneumothorax_no_drains,healthy_no_drains])
+                    df_eval = pd.concat([pneumothorax_no_drains,healthy])
                     y_true = df_eval["Pneumothorax"].fillna(0).to_numpy()
                     y_proba = df_eval["proba_Pneumothorax"].to_numpy()
                     auc = roc_auc_score(y_true,y_proba)
@@ -184,7 +185,7 @@ def main():
                     perf_file.write(f"\n{label},0.0,{round(auc,2)},{round(ci_auc[0],2)},{round(ci_auc[1],2)},{round(auprc,2)},{round(ci_auprc[0],2)},{round(ci_auprc[1],2)},{round(baseline_auprc,2)}")
 
                     #With drains
-                    df_eval = pd.concat([pneumothorax_only_drains,healthy_no_drains])
+                    df_eval = pd.concat([pneumothorax_only_drains,healthy])
                     y_true = df_eval["Pneumothorax"].fillna(0).to_numpy()
                     y_proba = df_eval["proba_Pneumothorax"].to_numpy()
                     auc = roc_auc_score(y_true,y_proba)
@@ -194,7 +195,6 @@ def main():
                     ci_auprc = bootstrap(y_true,y_proba,adjusted_auprc)
                     perf_file.write(f"\n{label},1.0,{round(auc,2)},{round(ci_auc[0],2)},{round(ci_auc[1],2)},{round(auprc,2)},{round(ci_auprc[0],2)},{round(ci_auprc[1],2)},{round(baseline_auprc,2)}")
 
-            #First global
 
 if __name__ == "__main__":
     main()

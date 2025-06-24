@@ -73,7 +73,7 @@ fig.ax_joint.legend(loc='upper right')
 plt.xlabel(f"{projection_type} 1")
 plt.ylabel(f"{projection_type} 2")
 plt.axis('off')
-plt.legend(fontsize='large')
+plt.legend(fontsize=25)
 plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_modality.png", bbox_inches='tight', dpi=300)
 plt.close()
 
@@ -87,9 +87,10 @@ diff = np.abs(centroid_img - centroid_txt)
 diff_ordered = diff[np.argsort(diff)[::-1]]
 plt.figure()
 plt.plot(range(len(diff)),diff_ordered)
-plt.xlabel("Sorted embedding dimension",fontdict = {'fontsize' : 15})
-plt.ylabel("Absolute difference between the centroids",fontdict = {'fontsize' : 15})
-plt.savefig(f"./reports/figures/diff_embeddings/{model_name}/diff_{model_name}_modalities.png")
+plt.xlabel("Sorted dimensions",fontdict = {'fontsize' : 25})
+plt.ylabel("Centroids difference",fontdict = {'fontsize' : 25})
+plt.tick_params('both',labelsize=25)
+plt.savefig(f"./reports/figures/diff_embeddings/{model_name}/diff_{model_name}_modalities.png",bbox_inches='tight', dpi=300)
 plt.close()
 
 #Plot for each attribute the scatter plot colored on this attribute (See Fig 2.b-d) and the difference of centroid (Fig 3.b)
@@ -101,11 +102,11 @@ for charac in characteristics:
     #Both image and text embeddings
     sns.set_theme(style="white", palette=None)
     fig = sns.jointplot(x=projection_imagestexts[:,0], y=projection_imagestexts[:,1], hue=np.concatenate((lst_charac, lst_charac),axis=0), kind='scatter', alpha=0.6, marker='o', s=40, hue_order=characteristics[charac], joint_kws=dict(rasterized=True))
-    fig.ax_joint.legend(loc='upper right')
+    fig.ax_joint.legend()
     plt.xlabel(f"{projection_type} 1")
     plt.ylabel(f"{projection_type} 2")
     plt.axis('off')
-    plt.legend(fontsize='large')
+    plt.legend(fontsize=20)
     plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_{charac.lower()}_imagestexts.png", bbox_inches='tight', dpi=300)
     plt.close()
 
@@ -113,11 +114,11 @@ for charac in characteristics:
     #Only image embeddings
     sns.set_theme(style="white", palette=None)
     fig = sns.jointplot(x=projection_imagestexts[:len(embeddings_images),0], y=projection_images[:len(embeddings_images),1], hue=lst_charac, kind='scatter', alpha=0.6, marker='o', s=40, hue_order=characteristics[charac], joint_kws=dict(rasterized=True))
-    fig.ax_joint.legend(loc='upper right')
+    fig.ax_joint.legend()
     plt.xlabel(f"{projection_type} 1")
     plt.ylabel(f"{projection_type} 2")
     plt.axis('off')
-    plt.legend(fontsize='large')
+    plt.legend(fontsize=20)
     plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_{charac.lower()}_images.png", bbox_inches='tight', dpi=300)
     plt.close()
 
@@ -125,11 +126,11 @@ for charac in characteristics:
     #Only text embeddings
     sns.set_theme(style="white", palette=None)
     fig = sns.jointplot(x=projection_imagestexts[len(embeddings_images):,0], y=projection_imagestexts[len(embeddings_images):,1], hue=lst_charac, kind='scatter', alpha=0.6, marker='o', s=40, hue_order=characteristics[charac], joint_kws=dict(rasterized=True))
-    fig.ax_joint.legend(loc='upper right')
+    fig.ax_joint.legend()
     plt.xlabel(f"{projection_type} 1")
     plt.ylabel(f"{projection_type} 2")
     plt.axis('off')
-    plt.legend(fontsize='large')
+    plt.legend(fontsize=20)
     plt.savefig(f"./reports/figures/{projection_type}/{model_name}/{projection_type}_{model_name}_{charac.lower()}_texts.png", bbox_inches='tight', dpi=300)
     plt.close()
     
@@ -149,8 +150,9 @@ for charac in characteristics:
                 diff_ordered = diff[np.argsort(diff)[::-1]]
                 plt.figure()
                 plt.plot(range(len(diff)),diff_ordered)
-                plt.xlabel("Sorted embedding dimension",fontdict = {'fontsize' : 15})
-                plt.ylabel("Absolute difference between the centroids",fontdict = {'fontsize' : 15})
-                plt.savefig(f"./reports/figures/diff_embeddings/{model_name}/{charac}/diff_{model_name}_{charac}_{characteristics[charac][i]}_{characteristics[charac][j]}.png")
+                plt.xlabel("Sorted dimensions",fontdict = {'fontsize' : 25})
+                plt.ylabel("Centroids difference",fontdict = {'fontsize' : 25})
+                plt.tick_params('both',labelsize=25)
+                plt.savefig(f"./reports/figures/diff_embeddings/{model_name}/{charac}/diff_{model_name}_{charac}_{characteristics[charac][i]}_{characteristics[charac][j]}.png",bbox_inches='tight', dpi=300)
                 plt.close()
         
