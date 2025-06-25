@@ -55,6 +55,8 @@ if args.classification_head == 'mlp':
     #List of possible layer_size for the hyperparameter tuning
     hp_name = "hidden_layer_sizes"
     hyperparams = {hp_name:[(128,),(256,),(512,),(1024,)]}
+    params = {"max_iter":500}
+
 elif args.classification_head == 'lp':
     hp_name = "learning_rate_init"
     hyperparams = {hp_name:[0.001,0.0001,0.00001]}
@@ -103,6 +105,7 @@ for train_val_idx, test_idx in train_test_split.split(df, groups=df['subject_id'
         lst_auc_val = []
         #select best hyperparam
         for p in hyperparams[hp_name]:
+            # print(p)
             if params:
                 clf = clf_class(**params,**{hp_name:p})
             else:
@@ -138,4 +141,5 @@ for train_val_idx, test_idx in train_test_split.split(df, groups=df['subject_id'
         #Apply to test set and get AUC
         auc = roc_auc_score(y_test,probas_test,multi_class='ovr')
         lst_auc_test.append(auc)
-    print(np.mean(lst_auc_test))
+    with open("./data/sensitive_attribute_classification.csv","a") as file:
+        file.write(f"{args.model_name},{args.attribute},{np.mean(lst_auc_test)}\n")

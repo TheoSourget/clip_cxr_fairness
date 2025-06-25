@@ -5,6 +5,42 @@ import numpy as np
 from pathlib import Path
 from sklearn.calibration import calibration_curve
 import matplotlib.colors as mcolors
+import matplotlib as mpl
+
+class UCBerkeley:
+    """From https://brand.berkeley.edu/colors/"""
+
+    info = [
+        {"hex_value": "#002676", "name": "Berkeley blue", "type": "primary"},
+        {"hex_value": "#018943", "name": "Green Medium", "type": "primary"},
+        {"hex_value": "#FDB515", "name": "California Gold", "type": "primary"},
+        {"hex_value": "#E7115E", "name": "Rose Medium", "type": "primary"},
+        {"hex_value": "#6C3302", "name": "South Hall", "type": "primary"},
+        {"hex_value": "#FF0000", "name": "Red", "type": "primary"},
+    ]
+    colors = [d["hex_value"] for d in info]
+
+style_params = {
+    "axes.grid": True,
+    "axes.spines.left": False,
+    "axes.spines.right": False,
+    "axes.spines.top": False,
+    "axes.spines.bottom": False,
+    "axes.facecolor": "#ebebeb",
+    "axes.axisbelow": True,
+    "axes.titlelocation": "center",
+    "grid.color": "white",
+    "grid.linestyle": "-",
+    "grid.linewidth": 1,
+    "grid.alpha": 1,
+    "xtick.color": "#4D4D4D",
+    "ytick.color": "#4D4D4D",
+    "text.color": "#000000",
+    "font.family": ["arial"],
+    "image.cmap": "viridis",
+    "axes.prop_cycle": mpl.cycler(color=UCBerkeley.colors),
+}
+mpl.rcParams.update(style_params)
 
 def generate_table_zeroshot_mimic(models,labels,group):
     with open("./reports/zeroshot_mimic.txt", "w") as text_file:
@@ -25,16 +61,31 @@ def generate_table_zeroshot_mimic(models,labels,group):
 
         for model_name in models:
             df = pd.read_csv(f"./data/performance/MIMIC/zeroshot_{model_name}.csv")
-            line = f"\t{models[model_name]} "
+            line_metric = f"\t{models[model_name]} "
+            line_ci="\t"
             for l in labels:
-                line += f'& {df[df["class"].isin([l]) & df["group"].isin([group])]["AUC"].item()} & {df[df["class"].isin([l]) & df["group"].isin([group])]["AUPRC"].item()} '
-            line += f'& {df[df["group"].isin([group])]["AUC"].mean().round(2)} & {df[df["group"].isin([group])]["AUPRC"].mean().round(2)} '
-            line += r"\\"
-            line += "\n"
-            text_file.write(line)
+                auc = df[df["class"].isin([l]) & df["group"].isin([group])]["AUC"].item()
+                auc_ci_low = df[df["class"].isin([l]) & df["group"].isin([group])]["CI_AUC_low"].item()
+                auc_ci_up = df[df["class"].isin([l]) & df["group"].isin([group])]["CI_AUC_up"].item()
+
+                auprc = df[df["class"].isin([l]) & df["group"].isin([group])]["AUPRC"].item()
+                auprc_ci_low = df[df["class"].isin([l]) & df["group"].isin([group])]["CI_AUPRC_low"].item()
+                auprc_ci_up = df[df["class"].isin([l]) & df["group"].isin([group])]["CI_AUPRC_up"].item()
+
+                line_metric += f'& {auc} & {auprc} '
+                line_ci += f'& [{auc_ci_low},{auc_ci_up}] & [{auprc_ci_low},{auprc_ci_up}]'
+            line_metric += f'& {df[df["group"].isin([group])]["AUC"].mean().round(2)} & {df[df["group"].isin([group])]["AUPRC"].mean().round(2)} '
+            line_metric += r"\\"
+            line_metric += "\n"
+            text_file.write(line_metric)
+
+            line_ci += f'& \pm {df[df["group"].isin([group])]["AUC"].std().round(2)} & \pm {df[df["group"].isin([group])]["AUPRC"].std().round(2)} '
+            line_ci += r"\\"
+            line_ci += "\n"
+            text_file.write(line_ci)
         text_file.write("\t\\hline\n")
         text_file.write("\t\\end{tabular}\n")
-        text_file.write("\t\\caption{AUC and AUPRC of zeroshot classification}\n")
+        text_file.write("\t\\caption{AUC and adjusted AUPRC of zeroshot classification.}\n")
         text_file.write("\t\\label{tab:zeroshot_perf}\n")
         text_file.write("\\end{table}\n")
 
