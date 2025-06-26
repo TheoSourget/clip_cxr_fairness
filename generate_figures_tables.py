@@ -161,7 +161,7 @@ def generate_barplot_drains(models):
         df_model["group"]= df_model["group"].replace("0.0","No drain")
         df_model["group"]= df_model["group"].replace("1","With drain")
         df_model["group"]= df_model["group"].replace("1.0","With drain")
-        df_model["model"] = model_name
+        df_model["model"] = models[model_name]
         lst_df.append(df_model)
     
     df_results_combined = pd.concat(lst_df, axis=0, ignore_index=True)
@@ -260,8 +260,8 @@ if __name__ == "__main__":
         'Pneumothorax',
     ]
     # generate_table_zeroshot_mimic(models,labels,"global")
-    generate_barplot_subgroup(models,"MIMIC",["global","Female","Male"],"sex",x_label=False)
-    generate_barplot_subgroup(models,"MIMIC",["global","White","Black","Asian"],"race",x_label=True)
-    generate_barplot_subgroup(models,"MIMIC",["global","18-25","25-50","50-65","65-80","80+"],"age",x_label=False)
+    # generate_barplot_subgroup(models,"MIMIC",["global","Female","Male"],"sex",x_label=False)
+    # generate_barplot_subgroup(models,"MIMIC",["global","White","Black","Asian"],"race",x_label=True)
+    # generate_barplot_subgroup(models,"MIMIC",["global","18-25","25-50","50-65","65-80","80+"],"age",x_label=False)
     generate_barplot_drains(models)
     # generate_calibration_curves(models,subgroup=False)
