@@ -23,66 +23,6 @@ from health_multimodal.vlp.inference_engine import ImageTextInferenceEngine
 RESIZE = 512
 CENTER_CROP_SIZE = 512
 
-
-# def _get_default_text_prompts_for_pneumonia() -> Tuple[List, List]:
-#     """
-#     Get the default text prompts for presence and absence of pneumonia
-#     """
-#     pos_query = [
-#         'Findings consistent with pneumonia',
-#         'Findings suggesting pneumonia',
-#         'This opacity can represent pneumonia',
-#         'Findings are most compatible with pneumonia',
-#     ]
-#     neg_query = [
-#         'There is no pneumonia',
-#         'No evidence of pneumonia',
-#         'No evidence of acute pneumonia',
-#         'No signs of pneumonia',
-#     ]
-
-#     return pos_query, neg_query
-
-           
-# def test_zero_shot_RNSA():
-#     #Load dataset info (image names, label)
-#     df = pd.read_csv('../data/stage_2_train_labels.csv')
-
-#     #Remove duplicate rows for multiple bounding boxes
-#     df = df.drop_duplicates(subset=['patientId'])
-
-#     #Create the path from patientId (image name)
-#     df['path'] = df['patientId'].apply(lambda id:f'../data/RSNA/{id}.dcm')
-#     paths = df['path'].to_numpy()[:10]
-#     labels = df['Target'].to_numpy()[:10]
-
-#     #Load image and text models
-#     img_txt_inference = _get_vlp_inference_engine(get_biovil_t_image_encoder)
-
-#     #Get the prompts for pneuonia and healthy class
-#     positive_prompts, negative_prompts = _get_default_text_prompts_for_pneumonia()
-
-#     #Apply the model on each image
-#     preds = []
-#     for image_path, label in tqdm.tqdm(zip(paths,labels),total=len(paths)):
-#         image_path = Path(image_path)
-#         positive_score = img_txt_inference.get_similarity_score_from_raw_data(
-#             image_path=image_path, query_text=positive_prompts
-#         )
-#         negative_score = img_txt_inference.get_similarity_score_from_raw_data(
-#             image_path=image_path, query_text=negative_prompts
-#         )
-
-#         #Get probas applying softmax on the the cosine similarities between the image and prompt representations (from the paper)
-#         probas = softmax(torch.tensor([positive_score,negative_score]))
-#         preds.append(probas.argmax())
-
-#     print(labels)
-#     print(probas)
-#     print(preds)
-#     print(f1_score(labels,preds))
-# test_zero_shot_RNSA()
-
 class Biovil():
     def __init__(self,image_model="biovil"):
         self.image_model = image_model
