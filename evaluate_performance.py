@@ -102,32 +102,32 @@ def main():
 
     
     with torch.no_grad():
-        # #Load the model
-        # if args.model_name == 'medclip':
-        #     model = MedCLIP()
-        # elif args.model_name == 'biovil':
-        #     model = Biovil(image_model="biovil")
-        # elif args.model_name == 'biovil-t':
-        #     model = Biovil(image_model="biovil-t")
-        # elif args.model_name == 'medimageinsight':
-        #     model = MedImageInsightWrapper()
-        # elif args.model_name == 'chexzero':
-        #     model = Chexzero()
-        # elif args.model_name == 'cxrclip':
-        #     model = Cxrclip()
-        # else:
-        #     print('Unknown model name, choose in the following list: medclip,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
-        #     return
+        #Load the model
+        if args.model_name == 'medclip':
+            model = MedCLIP()
+        elif args.model_name == 'biovil':
+            model = Biovil(image_model="biovil")
+        elif args.model_name == 'biovil-t':
+            model = Biovil(image_model="biovil-t")
+        elif args.model_name == 'medimageinsight':
+            model = MedImageInsightWrapper()
+        elif args.model_name == 'chexzero':
+            model = Chexzero()
+        elif args.model_name == 'cxrclip':
+            model = Cxrclip()
+        else:
+            print('Unknown model name, choose in the following list: medclip,biovil,biovil-t,medimageinsight,chexzero,cxrclip')
+            return
     
-        # #Get the probabilities for each sample
-        # print("Computing predictions")
-        # lst_probas = compute_probas(image_paths,labels,model,args.batch_size)
-        # for label in labels:
-        #     df[f"proba_{label}"] = lst_probas[f"{label}"]
+        #Get the probabilities for each sample
+        print("Computing predictions")
+        lst_probas = compute_probas(image_paths,labels,model,args.batch_size)
+        for label in labels:
+            df[f"proba_{label}"] = lst_probas[f"{label}"]
         
-        # #Save the probabilities
-        # Path(f"./data/probas_{args.dataset}/").mkdir(parents=True, exist_ok=True)
-        # df.to_csv(f"./data/probas_{args.dataset}/probas_{args.dataset}_{args.model_name}.csv")
+        #Save the probabilities
+        Path(f"./data/probas_{args.dataset}/").mkdir(parents=True, exist_ok=True)
+        df.to_csv(f"./data/probas_{args.dataset}/probas_{args.dataset}_{args.model_name}.csv")
 
         #Load the proababilites (in case you saved them before, you can comment line 97-122)
         df = pd.read_csv(f"./data/probas_{args.dataset}/probas_{args.dataset}_{args.model_name}.csv")

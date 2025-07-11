@@ -259,9 +259,9 @@ if __name__ == "__main__":
         'Pneumonia',
         'Pneumothorax',
     ]
-    # generate_table_zeroshot_mimic(models,labels,"global")
-    # generate_barplot_subgroup(models,"MIMIC",["global","Female","Male"],"sex",x_label=False)
-    # generate_barplot_subgroup(models,"MIMIC",["global","White","Black","Asian"],"race",x_label=True)
-    # generate_barplot_subgroup(models,"MIMIC",["global","18-25","25-50","50-65","65-80","80+"],"age",x_label=False)
+    generate_table_zeroshot_mimic(models,labels,"global")
+    generate_barplot_subgroup(models,"MIMIC",["global","Female","Male"],"sex",x_label=False)
+    generate_barplot_subgroup(models,"MIMIC",["global","White","Black","Asian"],"race",x_label=True)
+    generate_barplot_subgroup(models,"MIMIC",["global","18-25","25-50","50-65","65-80","80+"],"age",x_label=False)
     generate_barplot_drains(models)
-    # generate_calibration_curves(models,subgroup=False)
+    generate_calibration_curves(models,subgroup=False)
