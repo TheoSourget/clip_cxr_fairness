@@ -61,7 +61,6 @@ def save_embeddings(image_paths,label_texts,model,batch_size,save_file):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', default='medclip')
-    parser.add_argument('--image_folder', default='./data/RSNA_png/')
     parser.add_argument('--batch_size', default=1, type=int)
     parser.add_argument('--dataset', default='MIMIC')
 

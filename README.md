@@ -57,19 +57,30 @@ The images will be resized to 224x224 and normalized.
 
 
 To generate the drains label launch drains_detection.py script after processing the data with the previous command.
+If you need to train the drains detection model the following command will both train the model and applied it to unannotated data:
+```sh
+python drains_detection.py --train --data_path PATH_TO_CXR14
+``` 
+
+If you already trained the model you can use the command to apply it to the unannotated data:
+```sh
+python drains_detection.py --weights PATH_TO_WEIGHTS  --data_path PATH_TO_CXR14
+```
 
 # How to use
 
 ## Get the embeddings
 The script generate_embeddings.py can be used to generate the embeddings. An example using the following command:
 ```sh
-python generate_embeddings.py --model_name medimageinsight --batch_size 32
+python generate_embeddings.py --model_name medimageinsight --batch_size 32 --dataset MIMIC
 ``` 
 
 the options are:
 * **--model_name**: name of the model to apply. Choose between:
 * **--batch_size**: The number of image to process at the same time. For some model the image will still be processed one by one
-* **--image_folder**: Path to the folder containing the png images, if you followed the instruction the default value should be working.
+* **--dataset**: The dataset to use, either MIMIC or CXR14
+
+The path to need to be specified within generate_embeddings.py
 
 ## Get the probabilities
 The script evaluate_performance.py compute the probabality for the labels defined within the file and saved them in data/probas_dataset/. It will also compute the AUC and AUCPR and save the results in data/performance/dataset/.
@@ -84,6 +95,8 @@ the options are:
 * **--batch_size**: The number of image to process at the same time. For some model the image will still be processed one by one
 * **--dataset**: Name of the dataset you want to use, MIMIC or CXR14.
 
+The path to need to be specified within generate_embeddings.py
+
 
 ## Generate the tables and visualisations
 To reproduce most of the tables and figures from the paper you can launch generate_figures_tables.py:
@@ -91,14 +104,26 @@ To reproduce most of the tables and figures from the paper you can launch genera
 python generate_figures_tables.py
 ```
 
+To generate the PCA plots and the differences between cendroids you can use embedding_analysis.py. Here is an example:
+```sh
+python embedding_analysis.py --model_name medclip --projection_type PCA
+```
+
+
+# Citation
+If you used our code for your research, please cite our paper:
+
+```
+TBA
+```
+
 # Acknowledgement
+
 This repo contains code from the base repo of the models, we want to thank the authors of these repos:
 * [MedCLIP](https://github.com/RyanWangZf/MedCLIP)
 * [MedImageInsight](https://huggingface.co/lion-ai/MedImageInsights)
 * [Biovil and Biovil-t](https://github.com/microsoft/hi-ml/tree/e011bb996056f81e6cca98eae5b0f1223461dda1/hi-ml-multimodal)
 * [CheXzero](https://github.com/rajpurkarlab/CheXzero)
 * [CXR CLIP](https://github.com/Soombit-ai/cxr-clip)
-
-
 
 **If you're using any of the model and/or dataset for research, please remember to cite the corresponding original papers following their authors guidelines.**
