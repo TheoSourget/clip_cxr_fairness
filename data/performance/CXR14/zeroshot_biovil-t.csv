@@ -1,0 +1,4 @@
+class,group,AUC,CI_AUC_low,CI_AUC_up,AUPRC,CI_AUPRC_low,CI_AUPRC_up,baseline_auprc
+Pneumothorax,global,0.68,0.67,0.69,0.21,0.19,0.23,0.1
+Pneumothorax,0.0,0.63,0.61,0.64,0.11,0.09,0.14,0.04
+Pneumothorax,1.0,0.71,0.7,0.72,0.22,0.2,0.24,0.07
