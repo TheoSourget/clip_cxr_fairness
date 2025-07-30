@@ -114,7 +114,12 @@ python embedding_analysis.py --model_name medclip --projection_type PCA
 If you used our code for your research, please cite our paper:
 
 ```
-TBA
+@article{sourget2025fairnessclip,
+    title={Fairness and Robustness of CLIP-Based Models for Chest X-rays}, 
+    author={Théo Sourget and David Restrepo and Céline Hudelot and Enzo Ferrante and Stergios Christodoulidis and Maria Vakalopoulou},
+    journal={arXiv preprint arXiv:2507.21291},
+    year={2025},
+}
 ```
 
 # Acknowledgement
